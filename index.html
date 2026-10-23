@@ -83,7 +83,7 @@ main .inner { padding-block: 24px 40px; }
 .hint { margin: 10px 0 0; color: var(--muted); font-size: 13px; }
 
 /* Skill card: follows the hovered/focused hero on desktop; becomes a bottom sheet with a "Send in" button after a tap on touch screens. */
-.skill { position: fixed; z-index: 40; width: min(330px, calc(100vw - 32px)); border: 3px solid var(--ink); border-radius: 16px; background: var(--paper); box-shadow: 6px 6px 0 var(--ink); overflow: hidden; pointer-events: none; }
+.skill { position: fixed; z-index: 40; width: min(330px, calc(100vw - 32px)); border: 3px solid var(--ink); border-radius: 16px; background: var(--paper); box-shadow: 6px 6px 0 var(--ink); overflow: hidden; }
 .skill.show { animation: skillIn .22s cubic-bezier(.2, 1.4, .4, 1); }
 .skill-head { position: relative; padding: 10px 44px 8px 14px; background: var(--hc); color: #FFFFFF; }
 .skill-head b { display: block; font-family: var(--display); font-weight: 400; font-size: 26px; line-height: 1; letter-spacing: 0.03em; }
@@ -1281,6 +1281,7 @@ function heroImg(h, cls) {
 
 let lastPtr = '';
 let skillOpener = null;
+let skillTimer = 0;
 
 function skillHTML(h) {
   const rows = h.stats.map(([label, val]) =>
@@ -1307,6 +1308,7 @@ function placeSkill(el, anchor) {
 }
 
 function showSkill(h, anchor, sheet) {
+  clearTimeout(skillTimer);
   const el = $('skill');
   if (el.dataset.hero !== h.id) {
     el.innerHTML = skillHTML(h);
@@ -1332,7 +1334,11 @@ function showSkill(h, anchor, sheet) {
   play(el, 'show');
 }
 
+// Hover mode: give the mouse a moment to cross the gap onto the card; it stays open while the mouse is on it.
+function hideSkillSoon() { clearTimeout(skillTimer); skillTimer = setTimeout(hideSkill, 200); }
+
 function hideSkill() {
+  clearTimeout(skillTimer);
   const el = $('skill');
   if (el.hidden) return;
   const wasSheet = el.classList.contains('sheet');
@@ -1355,7 +1361,7 @@ function buildRoster() {
     // Mouse: hover shows the skills, click picks. Touch: the first tap opens the skills with a "Send in" button.
     b.addEventListener('pointerdown', e => { lastPtr = e.pointerType; });
     b.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') showSkill(h, b, false); });
-    b.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') hideSkill(); });
+    b.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') hideSkillSoon(); });
     b.addEventListener('focus', () => { if (b.matches(':focus-visible')) showSkill(h, b, false); });
     b.addEventListener('blur', () => { if (!$('skill').classList.contains('sheet')) hideSkill(); });
     b.addEventListener('click', () => {
@@ -1704,6 +1710,9 @@ function start(data) {
     if (e.target.closest('.send')) pick($('skill').dataset.hero);
     else if (e.target.closest('.close, .keep')) hideSkill();
   });
+  $('skill').addEventListener('pointerenter', () => clearTimeout(skillTimer));
+  $('skill').addEventListener('pointerleave', e => { if (e.pointerType === 'mouse' && !$('skill').classList.contains('sheet')) hideSkillSoon(); });
+  tilt($('skill'), 10, px => { if (SK3?.stage.char) SK3.stage.char.facing = px * 0.5; });
   $('skillBack').addEventListener('click', hideSkill);
   document.addEventListener('keydown', e => { if (e.key === 'Escape') hideSkill(); });
   addEventListener('scroll', () => { if (!$('skill').classList.contains('sheet')) hideSkill(); }, { passive: true });
