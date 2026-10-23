@@ -199,6 +199,30 @@ main .inner { padding-block: 24px 40px; }
 .end-hero .total { font-family: var(--display); font-size: 72px; line-height: 1; letter-spacing: 0.03em; font-variant-numeric: tabular-nums; }
 .end-hero .rank { font-family: var(--display); font-size: 34px; letter-spacing: 0.03em; color: var(--villain); line-height: 1.05; }
 .end-hero p { margin: 4px 0 0; color: var(--muted); }
+.end-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.btn.alt { background: var(--paper); color: var(--ink); box-shadow: 4px 4px 0 var(--ink); }
+
+.solution { display: grid; gap: 4px; }
+.sol-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 760px) { .sol-list { grid-template-columns: minmax(0, 1fr); } }
+.sol { display: grid; align-content: start; border: 3px solid var(--ink); border-radius: 16px; background: #FFFFFF; overflow: hidden; box-shadow: 5px 5px 0 var(--ink); animation: rise .35s ease calc(var(--i, 0) * 60ms) backwards; }
+.sol-villain { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: var(--v-tint); border-bottom: 3px solid var(--ink); }
+.sol-villain .mini { width: 52px; height: 52px; flex: none; display: grid; place-items: center; overflow: hidden; border: 3px solid var(--ink); border-radius: 50%; background: var(--paper); }
+.sol-villain .mini svg { width: 82%; height: auto; }
+.sol-villain b { display: block; font-family: var(--display); font-weight: 400; font-size: 24px; line-height: 1; letter-spacing: 0.03em; }
+.sol-villain span { display: block; margin-top: 2px; font-size: 12px; color: var(--muted); }
+.sol-body { display: grid; gap: 10px; padding: 12px 14px 14px; }
+.sol-hero { display: flex; align-items: center; gap: 12px; }
+.sol-hero img { width: 52px; height: 52px; flex: none; border: 3px solid var(--hc); border-radius: 50%; object-fit: cover; background: var(--tint); }
+.sol-hero b { display: block; font-weight: 800; font-size: 15px; line-height: 1.2; }
+.sol-hero .tag { display: inline-block; margin-top: 3px; padding: 1px 10px; border-radius: 999px; background: var(--good); color: #FFFFFF; font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+.sol-body p { margin: 0; font-size: 14px; line-height: 1.45; }
+.keystat { display: inline-flex; align-items: center; gap: 8px; justify-self: start; padding: 2px 10px; border: 2px solid var(--hc); border-radius: 999px; background: var(--tint); font-size: 12px; font-weight: 600; }
+.keystat b { font-family: var(--display); font-weight: 400; font-size: 17px; line-height: 1; color: var(--hc); }
+.sol-alt { display: grid; gap: 2px; padding-top: 10px; border-top: 2px solid var(--paper-2); font-size: 13px; color: var(--muted); }
+.sol-alt strong { color: var(--ink); }
+.sol .verdict { font-size: 11px; padding: 2px 10px; }
+
 .table-wrap { overflow-x: auto; border: 3px solid var(--ink); border-radius: 14px; background: #FFFFFF; }
 table { width: 100%; border-collapse: collapse; min-width: 560px; }
 th, td { padding: 10px 14px; text-align: left; border-bottom: 2px solid var(--paper-2); vertical-align: middle; font-size: 14px; }
@@ -275,7 +299,10 @@ tr:last-child td { border-bottom: 0; }
           <div class="rank" id="endRank"></div>
           <p id="endSub"></p>
         </div>
-        <button class="btn" id="againBtn" type="button">Play again</button>
+        <div class="end-actions">
+          <button class="btn" id="againBtn" type="button">Play again</button>
+          <button class="btn alt" id="solBtn" type="button" aria-expanded="false" aria-controls="solution">Show best solution</button>
+        </div>
       </div>
       <div class="table-wrap">
         <table>
@@ -283,6 +310,10 @@ tr:last-child td { border-bottom: 0; }
           <tbody id="endRows"></tbody>
         </table>
       </div>
+      <section class="solution" id="solution" hidden>
+        <div class="panel-head"><h3>The best solution</h3><p>Why each perfect match beats its villain – in the order you met them.</p></div>
+        <div class="sol-list" id="solList"></div>
+      </section>
     </section>
 
     <p class="foot">Draft · villains appear in a new order every game · every hero is the perfect match for exactly one villain.</p>
@@ -341,42 +372,52 @@ const VILLAINS = [
   { name: 'Captain Unlabelled', weak: 'Unlabelled columns', nem: 'research', glyph: 'col_?', color: '#7C3AED',
     threat: 'Turns every dataset into col_1, col_2, col_3 … and nobody knows what they mean.',
     best: ['powerbi', 'Mr. Power BI builds a clean data model and names every column before lunch.'],
+    why: 'A dashboard can’t be built on col_1, col_2 and col_3, so naming every field in a clean data model is the first thing Mr. Power BI does. Unlabelled data is just his Monday morning.', key: 'DAX sorcery',
     ok: ['handoff', 'Mr. Handoff Plugin maps the fields one by one. It works, but it takes all afternoon.'] },
   { name: 'The API Breaker', weak: 'Breaking API changes', nem: 'handoff', glyph: 'v2→v3', color: '#DC2626',
     threat: 'Renames a field in production on a Tuesday. No warning, no changelog.',
     best: ['devops', 'The contract tests in Mr. DevOps’ pipeline catch the change before it ever ships.'],
+    why: 'The API Breaker only wins when a change reaches production unnoticed. Mr. DevOps sends every change through one pipeline, where contract tests stop a renamed field before it ships.', key: 'Pipeline power',
     ok: ['sfchat', 'Mr. Salesforcechat hacks together a workaround. Again.'] },
   { name: 'The Quick-Favour Phantom', weak: '“Can you just quickly…”', nem: 'sekretariat', glyph: '1 min?', color: '#0891B2',
     threat: 'Appears at your desk with “just one tiny thing” – five times a day.',
     best: ['mesi', 'Mr. MESI deflects it like every other question. The Phantom bounces right off the shield.'],
+    why: 'The Phantom feeds on people who can’t say no. Deflecting questions is Mr. MESI’s daily job, so “just one tiny thing” bounces straight off his shield.', key: 'Questions deflected',
     ok: ['coordinator', 'Mrs. Coordinator asks for a ticket. The Phantom slowly backs away.'] },
   { name: 'The Flaky Fiend', weak: 'Flaky tests', nem: 'devops', glyph: '✓✗✓', color: '#65A30D',
     threat: 'Green, red, green, red. Nobody knows why, and everyone just hits “re-run”.',
     best: ['gleit', 'Mr. Gleitschirm keeps asking “but how does that work?” until the root cause confesses.'],
+    why: 'Flaky tests survive because everyone hits “re-run” instead of asking why. Mr. Gleitschirm’s endless “how does that work?” is exactly what digs out the root cause.', key: 'Curiosity',
     ok: ['research', 'Mr. Research digs through the logs and finds a suspicious shared test database.'] },
   { name: 'The Refresh Wraith', weak: 'Data refresh failed', nem: 'powerbi', glyph: '06:00', color: '#475569',
     threat: 'Strikes at six in the morning, right before the management meeting.',
     best: ['handoff', 'Mr. Handoff Plugin reconnects the data source and passes the data straight through.'],
+    why: 'A failed refresh is a broken connection between two systems – and moving data from one app to the next is Mr. Handoff Plugin’s superpower.', key: 'Handoff speed',
     ok: ['devops', 'Mr. DevOps adds monitoring, so the Wraith can never sneak up again.'] },
   { name: 'The Hard-Code Hydra', weak: 'Hard-coded entity IDs', nem: 'mesi', glyph: 'ID=7', color: '#B45309',
     threat: 'Cut off one hard-coded ID and two more grow back in the next release.',
     best: ['sfchat', 'Mr. Salesforcechat rewrites the whole thing himself. He is very used to that.'],
+    why: 'Waiting for someone else to fix a Hydra only grows new heads with every release. Mr. Salesforcechat doesn’t wait – he rewrites it himself.', key: 'Do-it-yourself power',
     ok: ['devops', 'Mr. DevOps adds a lint rule that blocks new heads from growing.'] },
   { name: 'The Gate-Change Gremlin', weak: 'Last-minute flight changes', nem: 'taxi', glyph: '+3h', color: '#0F766E',
     threat: 'Moves the family flight three hours earlier – at midnight.',
     best: ['sekretariat', 'Mr. Sekretariat: “There’s a process for that.” New plan, new pickup, done.'],
+    why: 'The Gremlin turns a schedule change into chaos. Mr. Sekretariat turns chaos into a process: new flight, new plan, new pickup, signed off.', key: 'Process mastery',
     ok: ['coordinator', 'Mrs. Coordinator reschedules everyone in minutes. Pikett plan included.'] },
   { name: 'The Blank Ticket', weak: 'Tickets with no description', nem: 'coordinator', glyph: '???', color: '#9333EA',
     threat: 'Title: “Fix it”. Description: empty. Priority: urgent.',
     best: ['research', 'Mr. Research digs up exactly what the reporter meant – with sources.'],
+    why: 'A ticket without a description is a research problem – someone has to find out what the reporter actually meant. Nobody digs better than Mr. Research.', key: 'Data digging',
     ok: ['sekretariat', 'Mr. Sekretariat adds a mandatory ticket template. The Blank Ticket fades away.'] },
   { name: 'The Waiting Warden', weak: 'Tickets stuck in “Waiting”', nem: 'sfchat', glyph: 'zzz', color: '#57534E',
     threat: 'Guards a queue where tickets go to sleep and never wake up.',
     best: ['coordinator', 'Mrs. Coordinator raises it in the release meeting. Status: In progress.'],
+    why: 'Tickets only sleep in “Waiting” when nobody chases them. Mrs. Coordinator keeps every Avaloq ticket on track and brings it up in the release meeting.', key: 'Ticket triage',
     ok: ['taxi', 'Mr. Flughafentaxi drives over and picks up the answer in person.'] },
   { name: 'The Grey Sky', weak: 'Rainy weekends', nem: 'gleit', glyph: '☂', color: '#64748B',
     threat: 'Parks a heavy cloud over every launch site, every single weekend.',
     best: ['taxi', 'Mr. Flughafentaxi drives him to the airport – off to sunny skies!'],
+    why: 'Nobody can beat the weather – but Mr. Flughafentaxi can get Mr. Gleitschirm to the airport at 4 a.m. and off to sunny skies.', key: 'Early-morning pickups',
     ok: ['powerbi', 'Mr. Power BI builds a weather dashboard that spots the next flying day.'] }
 ];
 
@@ -812,8 +853,49 @@ function finish() {
     const td = document.createElement('td'); td.className = 'pts'; td.textContent = (p.pts > 0 ? '+' : '') + p.pts; tr.appendChild(td);
     tb.appendChild(tr);
   });
+  renderSolution();
   renderHeader();
   $('roundLbl').textContent = '10/10';
+}
+
+function renderSolution() {
+  $('solution').hidden = true;
+  $('solBtn').setAttribute('aria-expanded', 'false');
+  $('solBtn').textContent = 'Show best solution';
+  const list = $('solList'); list.textContent = '';
+  const labels = { good: 'You sent the perfect match', okay: 'You sent', miss: 'You sent', bad: 'You sent' };
+  S.picks.forEach((p, i) => {
+    const v = VILLAINS[p.v], h = H[v.best[0]];
+    const stat = h.stats.find(([label]) => label === v.key);
+    const card = document.createElement('article');
+    card.className = 'sol';
+    card.style.setProperty('--i', i);
+    card.style.setProperty('--v-tint', tint(v.color, 0.85));
+    card.style.setProperty('--hc', h.color);
+    card.style.setProperty('--tint', tint(h.color, 0.88));
+    const sent = p.kind === 'good' ? labels.good : `${labels[p.kind]} ${H[p.hero].name} · ${p.pts > 0 ? '+' : ''}${p.pts}`;
+    card.innerHTML = `
+      <div class="sol-villain"><div class="mini">${villainSVG(v, v.name)}</div><div><b>${v.name}</b><span>Born from: ${v.weak}</span></div></div>
+      <div class="sol-body">
+        <div class="sol-hero"><img src="${AV[h.id]}" alt=""><div><b>${h.name}</b><span class="tag">Perfect match · +100</span></div></div>
+        <p>${v.why}</p>
+        ${stat ? `<span class="keystat">${stat[0]} <b>${stat[1]}</b></span>` : ''}
+        <div class="sol-alt">
+          <span><strong>Solid backup:</strong> ${H[v.ok[0]].name} (+50)</span>
+          <span><strong>Never send:</strong> ${H[v.nem].name} – it’s their own weakness (−25)</span>
+        </div>
+        <span class="verdict ${p.kind}">${sent}</span>
+      </div>`;
+    list.appendChild(card);
+  });
+}
+
+function toggleSolution() {
+  const open = $('solution').hidden;
+  $('solution').hidden = !open;
+  $('solBtn').setAttribute('aria-expanded', String(open));
+  $('solBtn').textContent = open ? 'Hide solution' : 'Show best solution';
+  if (open) $('solution').scrollIntoView({ behavior: reduced() ? 'auto' : 'smooth', block: 'start' });
 }
 
 function start(data) {
@@ -828,6 +910,7 @@ function start(data) {
   document.addEventListener('keydown', e => { if (e.key === 'Escape') hideSkill(); });
   addEventListener('scroll', () => { if (!$('skill').classList.contains('sheet')) hideSkill(); }, { passive: true });
   $('againBtn').addEventListener('click', () => { S = newGame(); showPick(); });
+  $('solBtn').addEventListener('click', toggleSolution);
   if (S.phase === 'end') { finish(); return; }
   showPick();
   if (S.phase === 'result') {

@@ -19,6 +19,7 @@ To host it, enable GitHub Pages for this repo (Settings → Pages → deploy fro
   - **The hero whose own weakness it is:** −25
 - Every pick plays out as a short fight before the result – click, tap or press any key to skip it.
 - Every hero is the perfect match for exactly one villain, so the maximum is 1000 points.
+- After the last fight, **Show best solution** explains which hero beats each villain and why.
 - Your best score is remembered in your browser.
 
 ## The heroes
@@ -44,6 +45,7 @@ All game data lives in the `VILLAINS` and `HEROES` arrays near the top of the sc
 
 - `nem` — the hero whose weakness it is (−25)
 - `best` — the perfect hero and the story line shown on a win (+100)
+- `why` and `key` — the explanation and the hero-card stat shown in the best solution
 - `ok` — the solid backup and its story line (+50)
 
 The answer key is in [`SOLUTIONS.md`](SOLUTIONS.md) — spoilers.
