@@ -88,6 +88,10 @@ main .inner { padding-block: 24px 40px; }
 .skill-head { position: relative; padding: 10px 44px 8px 14px; background: var(--hc); color: #FFFFFF; }
 .skill-head b { display: block; font-family: var(--display); font-weight: 400; font-size: 26px; line-height: 1; letter-spacing: 0.03em; }
 .skill-head span { display: block; margin-top: 3px; font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; opacity: .88; }
+.skill.has-3d .skill-head { min-height: 150px; display: flex; flex-direction: column; justify-content: flex-end; padding-right: 128px; background: radial-gradient(circle at calc(100% - 66px) 58%, rgba(255, 255, 255, .3), transparent 78px), var(--hc); }
+.skill-fig { position: absolute; right: 4px; bottom: 0; width: 124px; height: 148px; }
+.skill.has-3d.sheet .skill-head { padding-right: 164px; }
+.skill.sheet .skill-fig { right: 42px; }
 .skill-body { display: grid; gap: 10px; padding: 10px 14px 14px; }
 .skill-lbl { font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--hc); }
 .skill-body p { margin: 0; font-size: 13px; line-height: 1.4; }
@@ -118,6 +122,8 @@ main .inner { padding-block: 24px 40px; }
 .fighter { position: relative; z-index: 1; }
 .fighter img { display: block; width: clamp(84px, 24vw, 150px); aspect-ratio: 1; border: 5px solid var(--hc); border-radius: 50%; object-fit: cover; background: #FFFFFF; box-shadow: 4px 4px 0 var(--ink); }
 .fighter svg { display: block; width: clamp(96px, 27vw, 170px); height: auto; }
+.fig3d { display: block; width: clamp(110px, 27vw, 190px); height: clamp(140px, 34vw, 240px); }
+.v3d { position: absolute; inset: 0; z-index: 1; display: block; width: 100%; height: 100%; }
 .fx { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
 .fxword { position: absolute; isolation: isolate; padding: .5em .9em; font-family: var(--display); font-size: clamp(26px, 6vw, 42px); line-height: 1; letter-spacing: 0.04em; white-space: nowrap; color: var(--ink); }
 .fxword::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--burst, var(--pop)); clip-path: polygon(50% 0, 60% 22%, 84% 8%, 76% 34%, 100% 40%, 80% 56%, 94% 82%, 66% 74%, 58% 100%, 46% 78%, 22% 96%, 24% 70%, 0 66%, 18% 50%, 4% 22%, 30% 26%); }
@@ -320,8 +326,9 @@ tr:last-child td { border-bottom: 0; }
   </div>
 </main>
 
+<script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
 <script>
-const AV = {"research": "assets/avatars/research.jpg", "handoff": "assets/avatars/handoff.jpg", "sekretariat": "assets/avatars/sekretariat.jpg", "devops": "assets/avatars/devops.jpg", "powerbi": "assets/avatars/powerbi.jpg", "mesi": "assets/avatars/mesi.jpg", "taxi": "assets/avatars/taxi.jpg", "coordinator": "assets/avatars/coordinator.jpg", "sfchat": "assets/avatars/sfchat.jpg", "gleit": "assets/avatars/gleit.jpg"};
+const AV ={"research": "assets/avatars/research.jpg", "handoff": "assets/avatars/handoff.jpg", "sekretariat": "assets/avatars/sekretariat.jpg", "devops": "assets/avatars/devops.jpg", "powerbi": "assets/avatars/powerbi.jpg", "mesi": "assets/avatars/mesi.jpg", "taxi": "assets/avatars/taxi.jpg", "coordinator": "assets/avatars/coordinator.jpg", "sfchat": "assets/avatars/sfchat.jpg", "gleit": "assets/avatars/gleit.jpg"};
 
 // Role, superpower, stats, quote and weakness are taken from the hero cards in cards/.
 const HEROES = [
@@ -450,6 +457,411 @@ function villainSVG(v, label) {
   </svg>`;
 }
 
+// ---- 3D characters ----
+// Toy-style figures built from simple shapes, looking like the hero cards. One shared WebGL renderer
+// draws every stage and copies the pixels into that stage's own canvas. Without WebGL or Three.js,
+// T3 is null and the flat drawings are used instead.
+const LOOK = {
+  research:    { suit: '#22386A', cape: '#D99A20', hair: '#6B3E1F', style: 'short',   prop: 'magnifier', glyph: '◎' },
+  handoff:     { suit: '#2A2D38', cape: '#0F766E', hair: '#1F1F24', style: 'spiky',   prop: 'cube',      glyph: '⇄' },
+  sekretariat: { suit: '#3B2566', cape: '#BE185D', hair: '#2B2B30', style: 'short',   prop: 'clipboard', glyph: '△' },
+  devops:      { suit: '#1E2433', cape: '#B91C1C', hair: '#C98A2E', style: 'beard',   prop: 'flag',      glyph: '∞' },
+  powerbi:     { suit: '#262222', cape: '#1E40AF', hair: '#7C2D12', style: 'glasses', prop: 'chart',     glyph: '◔' },
+  mesi:        { suit: '#1E293B', cape: '#A16207', hair: '#4B5563', style: 'short',   prop: 'shield',    glyph: '☺' },
+  taxi:        { suit: '#1E293B', cape: '#F2C230', hair: '#16161D', style: 'cap',     prop: 'taxi',      glyph: '✈' },
+  coordinator: { suit: '#2A2140', cape: '#4338CA', hair: '#8B3A1E', style: 'long',    prop: 'calendar',  glyph: '✓' },
+  sfchat:      { suit: '#1C1917', cape: '#C2410C', hair: '#5B3A1E', style: 'spiky',   prop: 'wrench',    glyph: '…' },
+  gleit:       { suit: '#1E3A5F', cape: '#EA580C', hair: '#FFFFFF', style: 'helmet',  prop: 'glider',    glyph: 'L' }
+};
+const HERO_VIEW = { y: 1.6, h: 3.65 };
+const VILLAIN_VIEW = { y: 0.9, h: 2.6 };
+
+const T3 = (() => {
+  if (!window.THREE) return null;
+  let gl;
+  try { gl = new THREE.WebGLRenderer({ antialias: true, alpha: true }); } catch (e) { return null; }
+  gl.setPixelRatio(1);
+  gl.setClearColor(0x000000, 0);
+  gl.setScissorTest(true);
+  let glW = 0, glH = 0;
+
+  const grad = new THREE.DataTexture(new Uint8Array([120, 120, 120, 255, 195, 195, 195, 255, 255, 255, 255, 255]), 3, 1);
+  grad.minFilter = grad.magFilter = THREE.NearestFilter;
+  grad.needsUpdate = true;
+  const INK = new THREE.MeshBasicMaterial({ color: 0x16161D, side: THREE.BackSide });
+  const INK_SOLID = new THREE.MeshBasicMaterial({ color: 0x16161D });
+  const mat = (color, opts) => new THREE.MeshToonMaterial(Object.assign({ color, gradientMap: grad }, opts));
+  // A mesh plus a slightly larger back-facing copy in ink: the comic outline.
+  function part(geo, color, outline = 1.08, opts) {
+    const m = new THREE.Mesh(geo, color instanceof THREE.Material ? color : mat(color, opts));
+    if (outline) { const o = new THREE.Mesh(geo, INK); o.scale.setScalar(outline); m.add(o); }
+    return m;
+  }
+  function canvasTex(w, h, draw) {
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    const t = new THREE.CanvasTexture(c);
+    const paint = () => { const g = c.getContext('2d'); g.clearRect(0, 0, w, h); draw(g, w, h); t.needsUpdate = true; };
+    paint();
+    document.fonts?.ready.then(paint);
+    return t;
+  }
+  const emblemTex = (glyph, color) => canvasTex(128, 128, (g, w) => {
+    g.fillStyle = '#FFFFFF'; g.fillRect(0, 0, w, w);
+    g.lineWidth = 12; g.strokeStyle = color; g.beginPath(); g.arc(64, 64, 54, 0, Math.PI * 2); g.stroke();
+    g.fillStyle = color; g.font = 'bold 64px Inter, "Segoe UI Symbol", "Apple Symbols", sans-serif';
+    g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(glyph, 64, 68);
+  });
+  const textTex = (text, bg, fg, w = 256, h = 96, size = 60) => canvasTex(w, h, (g) => {
+    g.fillStyle = bg; g.fillRect(0, 0, w, h);
+    g.fillStyle = fg; g.font = `${size}px Bangers, Impact, sans-serif`;
+    g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, w / 2, h / 2 + 3);
+  });
+  // A box whose front (+z) face shows a texture.
+  function faceBox(w, h, d, color, tex, outline = 1.06) {
+    const side = mat(color), front = mat('#FFFFFF', { map: tex });
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), [side, side, side, side, front, side]);
+    if (outline) { const o = new THREE.Mesh(m.geometry, INK); o.scale.setScalar(outline); m.add(o); }
+    return m;
+  }
+  function shadow(r = 0.7) {
+    const s = new THREE.Mesh(new THREE.CircleGeometry(r, 32), new THREE.MeshBasicMaterial({ color: 0x16161D, transparent: true, opacity: 0.18, depthWrite: false }));
+    s.rotation.x = -Math.PI / 2; s.position.y = 0.005;
+    return s;
+  }
+  function character(root, update, onPlay) {
+    const ch = { root, facing: 0, sway: 1, act: 'idle', at: 0,
+      play(name) { ch.act = name; ch.at = performance.now() / 1000; onPlay?.(name); },
+      update: t => update(t, ch.act, t - ch.at, ch) };
+    return ch;
+  }
+
+  function buildProp(kind, acc) {
+    const g = new THREE.Group();
+    let tick = null;
+    if (kind === 'magnifier') {
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.045, 10, 28), INK_SOLID); ring.position.y = 0.44; g.add(ring);
+      const glass = new THREE.Mesh(new THREE.CircleGeometry(0.19, 28), new THREE.MeshBasicMaterial({ color: 0xDCEBFA, transparent: true, opacity: 0.8, side: THREE.DoubleSide }));
+      glass.position.y = 0.44; g.add(glass);
+      const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.26, 10), INK_SOLID); handle.position.y = 0.12; g.add(handle);
+    } else if (kind === 'cube') {
+      const side = mat(acc), top = mat('#FFFFFF');
+      const cube = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.32, 0.32), [side, side, top, side, side, side]);
+      const o = new THREE.Mesh(cube.geometry, INK); o.scale.setScalar(1.1); cube.add(o);
+      cube.position.y = 0.3; g.add(cube);
+      tick = t => { cube.rotation.set(0.4, t * 1.6, 0.2); };
+    } else if (kind === 'clipboard') {
+      const board = faceBox(0.34, 0.44, 0.04, '#E5E7EB', canvasTex(128, 160, (c) => {
+        c.fillStyle = '#FFFFFF'; c.fillRect(0, 0, 128, 160);
+        c.strokeStyle = acc; c.lineWidth = 9; c.lineCap = 'round';
+        [50, 90, 130].forEach(y => { c.beginPath(); c.moveTo(18, y); c.lineTo(28, y + 10); c.lineTo(44, y - 10); c.stroke(); c.strokeStyle = '#16161D'; c.lineWidth = 7; c.beginPath(); c.moveTo(58, y); c.lineTo(108, y); c.stroke(); c.strokeStyle = acc; c.lineWidth = 9; });
+      }));
+      board.position.y = 0.3; g.add(board);
+      const clip = part(new THREE.BoxGeometry(0.14, 0.06, 0.06), acc, 1.1); clip.position.set(0, 0.53, 0.02); g.add(clip);
+    } else if (kind === 'flag') {
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 1.0, 8), INK_SOLID); pole.position.y = 0.35; g.add(pole);
+      const knob = new THREE.Mesh(new THREE.SphereGeometry(0.04, 10, 8), mat('#F4C430')); knob.position.y = 0.87; g.add(knob);
+      const geo = new THREE.PlaneGeometry(0.46, 0.3, 10, 2); geo.translate(0.23, 0, 0);
+      const base = geo.attributes.position.array.slice();
+      const flag = new THREE.Mesh(geo, mat('#FFFFFF', { map: textTex('∞', acc, '#FFFFFF', 160, 104, 84), side: THREE.DoubleSide }));
+      flag.position.set(0.02, 0.68, 0); g.add(flag);
+      tick = t => {
+        const p = geo.attributes.position.array;
+        for (let i = 0; i < p.length; i += 3) p[i + 2] = Math.sin(t * 6 - base[i] * 9) * 0.05 * (base[i] / 0.46);
+        geo.attributes.position.needsUpdate = true;
+      };
+    } else if (kind === 'chart') {
+      const board = faceBox(0.56, 0.4, 0.05, '#16161D', canvasTex(160, 112, (c) => {
+        c.fillStyle = '#FFFFFF'; c.fillRect(0, 0, 160, 112);
+        c.fillStyle = '#16161D'; c.fillRect(0, 0, 160, 16);
+        c.fillStyle = acc; [[18, 60], [44, 40], [70, 72]].forEach(([x, h]) => c.fillRect(x, 100 - h, 18, h));
+        c.strokeStyle = acc; c.lineWidth = 6; c.beginPath(); c.moveTo(98, 86); c.lineTo(114, 64); c.lineTo(128, 74); c.lineTo(148, 34); c.stroke();
+      }));
+      board.position.y = 0.3; g.add(board);
+    } else if (kind === 'shield') {
+      const s = new THREE.Shape();
+      s.moveTo(0, -0.27); s.quadraticCurveTo(0.25, -0.12, 0.23, 0.17); s.lineTo(0, 0.23); s.lineTo(-0.23, 0.17); s.quadraticCurveTo(-0.25, -0.12, 0, -0.27);
+      const geo = new THREE.ExtrudeGeometry(s, { depth: 0.06, bevelEnabled: true, bevelSize: 0.015, bevelThickness: 0.015, bevelSegments: 2 });
+      geo.center();
+      const shield = part(geo, acc, 1.08); shield.position.y = 0.32; g.add(shield);
+      const face = new THREE.Mesh(new THREE.CircleGeometry(0.1, 24), mat('#FFFFFF', { map: emblemTex('☺', acc) }));
+      face.position.set(0, 0.34, 0.06); g.add(face);
+    } else if (kind === 'taxi') {
+      const sign = faceBox(0.5, 0.24, 0.2, '#F4C430', textTex('TAXI', '#F4C430', '#16161D', 200, 96, 72));
+      sign.position.y = 0.34; g.add(sign);
+      const base = part(new THREE.BoxGeometry(0.58, 0.06, 0.24), '#16161D', 0); base.position.y = 0.2; g.add(base);
+    } else if (kind === 'calendar') {
+      const cal = faceBox(0.44, 0.4, 0.05, '#E5E7EB', canvasTex(132, 120, (c) => {
+        c.fillStyle = '#FFFFFF'; c.fillRect(0, 0, 132, 120);
+        c.fillStyle = acc; c.fillRect(0, 0, 132, 30);
+        c.fillStyle = '#FFFFFF'; c.font = '22px Bangers, Impact, sans-serif'; c.textAlign = 'center'; c.fillText('PIKETT', 66, 23);
+        for (let r = 0; r < 3; r++) for (let q = 0; q < 4; q++) { c.fillStyle = r === 1 && q === 2 ? acc : '#C7C7CF'; c.fillRect(14 + q * 28, 42 + r * 24, 20, 16); }
+      }));
+      cal.position.y = 0.3; g.add(cal);
+    } else if (kind === 'wrench') {
+      const grey = mat('#9CA3AF');
+      const handle = part(new THREE.BoxGeometry(0.07, 0.5, 0.05), grey, 1.1); handle.position.y = 0.25; g.add(handle);
+      const head = part(new THREE.TorusGeometry(0.1, 0.04, 8, 16, Math.PI * 1.5), grey, 1.1);
+      head.position.y = 0.58; head.rotation.z = Math.PI * 0.25 + Math.PI; g.add(head);
+      tick = t => { g.rotation.z = Math.sin(t * 3) * 0.15; };
+    }
+    g.userData.tick = tick;
+    return g;
+  }
+
+  function buildHair(head, L) {
+    const hairMat = mat(L.hair);
+    const cap = (r, theta, color = hairMat) => {
+      const m = part(new THREE.SphereGeometry(r, 24, 12, 0, Math.PI * 2, 0, theta), color, 1.04);
+      m.rotation.x = -0.25; head.add(m); return m;
+    };
+    if (L.style === 'helmet') {
+      cap(0.35, Math.PI * 0.5, mat('#FFFFFF'));
+      const stripe = new THREE.Mesh(new THREE.TorusGeometry(0.352, 0.03, 6, 24, Math.PI), mat('#0369A1'));
+      stripe.rotation.y = Math.PI / 2; stripe.rotation.x = -0.25; head.add(stripe);
+      return;
+    }
+    if (L.style === 'cap') {
+      cap(0.345, Math.PI * 0.45);
+      const brim = part(new THREE.CylinderGeometry(0.22, 0.22, 0.03, 20, 1, false, -Math.PI / 2, Math.PI), '#16161D', 0);
+      brim.position.set(0, 0.12, 0.2); brim.rotation.x = 0.15; head.add(brim);
+      const dot = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 8), mat('#F4C430')); dot.position.set(0, 0.26, 0.27); head.add(dot);
+      return;
+    }
+    cap(0.335, Math.PI * 0.42);
+    if (L.style === 'spiky') {
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 8) * Math.PI * 2, tilt = 0.55;
+        const spike = part(new THREE.ConeGeometry(0.08, 0.24, 8), hairMat, 1.08);
+        const dir = new THREE.Vector3(Math.sin(tilt) * Math.cos(a), Math.cos(tilt), Math.sin(tilt) * Math.sin(a) - 0.15).normalize();
+        spike.position.copy(dir.clone().multiplyScalar(0.33));
+        spike.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+        head.add(spike);
+      }
+    } else if (L.style === 'long') {
+      [-0.27, 0.27].forEach(x => { const lock = part(new THREE.CapsuleGeometry(0.1, 0.36, 4, 10), hairMat, 1.06); lock.position.set(x, -0.2, -0.04); head.add(lock); });
+      const back = part(new THREE.CapsuleGeometry(0.2, 0.3, 4, 12), hairMat, 1.04); back.position.set(0, -0.15, -0.16); back.scale.z = 0.6; head.add(back);
+    } else if (L.style === 'beard') {
+      const beard = part(new THREE.SphereGeometry(0.33, 20, 10, 0, Math.PI * 2, Math.PI * 0.58, Math.PI * 0.3), hairMat, 1.03);
+      beard.rotation.x = 0.2; head.add(beard);
+    } else if (L.style === 'glasses') {
+      [-0.11, 0.11].forEach(x => { const r = new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.016, 6, 18), INK_SOLID); r.position.set(x, 0.035, 0.33); head.add(r); });
+    }
+  }
+
+  function buildHero(h) {
+    const L = LOOK[h.id], acc = h.color;
+    const root = new THREE.Group(), body = new THREE.Group();
+    root.add(body); root.add(shadow());
+
+    const legGeo = new THREE.CapsuleGeometry(0.13, 0.5, 4, 12), bootGeo = new THREE.CapsuleGeometry(0.15, 0.14, 4, 12);
+    [-0.16, 0.16].forEach(x => {
+      const leg = part(legGeo, L.suit); leg.position.set(x, 0.62, 0); body.add(leg);
+      const boot = part(bootGeo, acc); boot.position.set(x, 0.2, 0.04); boot.scale.z = 1.25; body.add(boot);
+    });
+    const torso = part(new THREE.CapsuleGeometry(0.36, 0.5, 6, 16), L.suit); torso.position.y = 1.42; torso.scale.z = 0.72; body.add(torso);
+    const belt = new THREE.Mesh(new THREE.CylinderGeometry(0.375, 0.375, 0.11, 24), INK_SOLID); belt.position.y = 1.02; belt.scale.z = 0.74; body.add(belt);
+    const buckle = part(new THREE.BoxGeometry(0.16, 0.12, 0.05), '#F4C430', 1.12); buckle.position.set(0, 1.02, 0.285); body.add(buckle);
+    const ring = new THREE.Mesh(new THREE.RingGeometry(0.19, 0.215, 32), INK_SOLID); ring.position.set(0, 1.5, 0.262); body.add(ring);
+    const emblem = new THREE.Mesh(new THREE.CircleGeometry(0.19, 32), mat('#FFFFFF', { map: emblemTex(L.glyph, acc) })); emblem.position.set(0, 1.5, 0.265); body.add(emblem);
+
+    const neck = part(new THREE.CylinderGeometry(0.1, 0.1, 0.16, 12), '#F2C29B', 0); neck.position.y = 2.04; body.add(neck);
+    const head = new THREE.Group(); head.position.y = 2.33; body.add(head);
+    head.add(part(new THREE.SphereGeometry(0.32, 24, 18), '#F2C29B', 1.05));
+    const band = new THREE.Mesh(new THREE.CylinderGeometry(0.328, 0.328, 0.13, 32, 1, true), mat(acc, { side: THREE.DoubleSide }));
+    band.position.y = 0.03; head.add(band);
+    const eyes = new THREE.Group(); eyes.position.y = 0.035; head.add(eyes);
+    [-0.11, 0.11].forEach(x => { const e = new THREE.Mesh(new THREE.SphereGeometry(0.06, 12, 8), mat('#FFFFFF')); e.scale.set(1, 0.65, 0.35); e.position.set(x, 0, 0.318); eyes.add(e); });
+    const smile = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.014, 6, 16, Math.PI), INK_SOLID);
+    smile.rotation.z = Math.PI; smile.position.set(0, -0.12, 0.29); head.add(smile);
+    buildHair(head, L);
+
+    const armGeo = new THREE.CapsuleGeometry(0.1, 0.44, 4, 10), handGeo = new THREE.SphereGeometry(0.12, 14, 10);
+    const arm = x => {
+      const g = new THREE.Group(); g.position.set(x, 1.88, 0);
+      const a = part(armGeo, L.suit); a.position.y = -0.3; g.add(a);
+      const hand = new THREE.Group(); hand.position.y = -0.62; hand.add(part(handGeo, acc)); g.add(hand);
+      body.add(g);
+      return [g, hand];
+    };
+    const [armL] = arm(-0.47);
+    const [armR, handR] = arm(0.47);
+
+    let prop = null, glider = null;
+    if (L.prop === 'glider') {
+      const R = 0.78, cy = 2.25;
+      glider = new THREE.Group(); glider.position.y = cy; body.add(glider);
+      const wing = part(new THREE.TorusGeometry(R, 0.07, 6, 30, Math.PI * 0.7), acc, 1.12);
+      wing.rotation.z = Math.PI * 0.15; wing.scale.z = 3; glider.add(wing);
+      const pts = [];
+      [0.15, 0.85].forEach(a => {
+        const x = R * Math.cos(Math.PI * a), y = R * Math.sin(Math.PI * a);
+        const tip = new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 8), mat('#F4C430')); tip.position.set(x, y, 0); tip.scale.z = 2.4; glider.add(tip);
+        pts.push(new THREE.Vector3(x, y, 0), new THREE.Vector3(Math.sign(x) * 0.47, 1.88 - cy, 0));
+      });
+      glider.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0x16161D })));
+    } else {
+      prop = buildProp(L.prop, acc); handR.add(prop);
+    }
+
+    const capeGeo = new THREE.PlaneGeometry(0.9, 1.55, 6, 12); capeGeo.translate(0, -0.775, 0);
+    const capeBase = capeGeo.attributes.position.array.slice();
+    const capeTex = canvasTex(64, 128, (c) => {
+      c.fillStyle = L.cape; c.fillRect(0, 0, 64, 128);
+      if (h.id === 'taxi') for (let q = 0; q < 8; q++) for (let r = 0; r < 2; r++) { c.fillStyle = (q + r) % 2 ? '#FFFFFF' : '#16161D'; c.fillRect(q * 8, 92 + r * 8, 8, 8); }
+    });
+    const cape = new THREE.Mesh(capeGeo, mat('#FFFFFF', { map: capeTex, side: THREE.DoubleSide }));
+    cape.position.set(0, 1.94, -0.27); body.add(cape);
+
+    return character(root, (t, act, k, ch) => {
+      const breathe = Math.sin(t * 2.2);
+      body.position.set(0, breathe * 0.02, 0);
+      body.rotation.set(0, 0, 0);
+      torso.scale.y = 1 + breathe * 0.015;
+      root.rotation.y = ch.facing + Math.sin(t * 0.7) * 0.35 * ch.sway;
+      head.rotation.set(0, Math.sin(t * 0.9 + 1) * 0.18, Math.sin(t * 1.3) * 0.05);
+      eyes.scale.y = (t % 3.7) > 3.58 ? 0.15 : 1;
+      armL.rotation.set(0, 0, -0.45 + Math.sin(t * 2.2) * 0.04);
+      armR.rotation.set(0, 0, 2.75 + Math.sin(t * 2.4) * 0.1);
+      if (glider) glider.rotation.z = Math.sin(t * 1.1) * 0.05;
+
+      if (act === 'punch' && k < 0.32) {
+        const p = Math.sin((k / 0.32) * Math.PI);
+        armL.rotation.set(-1.7 * p, 0, -0.45 * (1 - p));
+        body.rotation.y = 0.35 * p;
+      } else if (act === 'victory' && k < 1.3) {
+        body.position.y += Math.abs(Math.sin(k * Math.PI * 2.4)) * 0.4 * (1 - k / 1.3);
+        armR.rotation.z = 2.95 + Math.sin(k * 22) * 0.15;
+        armL.rotation.z = -2.6;
+      } else if (act === 'dizzy' && k < 1) {
+        root.rotation.y = ch.facing + (k / 1) * Math.PI * 2;
+        body.rotation.z = Math.sin(k * 14) * 0.12;
+      }
+      if (prop) { prop.rotation.z = -armR.rotation.z; prop.userData.tick?.(t); }
+
+      const p = capeGeo.attributes.position.array;
+      for (let i = 0; i < p.length; i += 3) {
+        const x0 = capeBase[i], y0 = capeBase[i + 1], d = -y0 / 1.55;
+        p[i] = x0 * (1 + d * 0.55);
+        p[i + 2] = -d * 0.3 - Math.sin(t * 2.6 + d * 4 + x0 * 2) * 0.07 * d;
+      }
+      capeGeo.attributes.position.needsUpdate = true;
+      capeGeo.computeVertexNormals();
+    });
+  }
+
+  function buildVillain(v) {
+    const root = new THREE.Group(), body = new THREE.Group();
+    root.add(body); root.add(shadow(0.85));
+    const prof = [[0, 0], [0.55, 0.02], [0.78, 0.25], [0.84, 0.6], [0.8, 1.0], [0.66, 1.35], [0.42, 1.58], [0.18, 1.68], [0, 1.7]].map(([x, y]) => new THREE.Vector2(x, y));
+    const skin = mat(v.color);
+    const blob = new THREE.Mesh(new THREE.LatheGeometry(prof, 36), skin); blob.scale.z = 0.86;
+    const hull = new THREE.Mesh(blob.geometry, INK); hull.scale.set(1.05, 1.03, 1.05); hull.position.y = -0.025; blob.add(hull);
+    body.add(blob);
+    const shine = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 10), new THREE.MeshBasicMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.35 }));
+    shine.position.set(-0.36, 1.3, 0.5); shine.scale.set(1.3, 0.45, 0.3); shine.rotation.z = 0.5; body.add(shine);
+    [[-0.42, 0.55], [0.42, -0.55]].forEach(([x, rz]) => { const horn = part(new THREE.ConeGeometry(0.16, 0.55, 14), '#16161D', 0); horn.position.set(x, 1.62, 0); horn.rotation.z = rz; body.add(horn); });
+
+    const eyes = new THREE.Group(); eyes.position.y = 1.02; body.add(eyes);
+    const pupils = [];
+    [-1, 1].forEach(s => {
+      const white = part(new THREE.SphereGeometry(0.15, 18, 12), '#FFFFFF', 1.1); white.scale.set(1, 0.78, 0.45); white.position.set(s * 0.24, 0, 0.62); eyes.add(white);
+      const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.065, 12, 10), INK_SOLID); pupil.position.set(s * 0.2, -0.01, 0.69); eyes.add(pupil); pupils.push(pupil);
+      const brow = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.08, 0.08), INK_SOLID); brow.position.set(s * 0.24, 1.24, 0.6); brow.rotation.set(-0.3, 0, s * 0.4); body.add(brow);
+    });
+    const mouth = new THREE.Group(); mouth.position.set(0, 0.74, 0.69); mouth.rotation.x = -0.12; body.add(mouth);
+    mouth.add(new THREE.Mesh(new THREE.CircleGeometry(0.27, 24, Math.PI, Math.PI), INK_SOLID));
+    for (let i = 0; i < 5; i++) { const tooth = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.09, 4), mat('#FFFFFF')); tooth.rotation.z = Math.PI; tooth.position.set(-0.16 + i * 0.08, -0.045, 0.01); mouth.add(tooth); }
+    const plate = faceBox(0.82, 0.24, 0.08, '#16161D', textTex(v.glyph, '#16161D', '#FFFFFF', 256, 76, 56), 0);
+    plate.position.set(0, 0.36, 0.66); plate.rotation.x = -0.12; body.add(plate);
+
+    return character(root, (t, act, k, ch) => {
+      const bob = Math.sin(t * 2.6);
+      body.position.set(0, (bob * 0.5 + 0.5) * 0.08, 0);
+      body.scale.set(1 - bob * 0.02, 1 + bob * 0.03, 1 - bob * 0.02);
+      root.rotation.set(0, ch.facing + Math.sin(t * 0.6) * 0.4 * ch.sway, 0);
+      root.position.x = 0;
+      eyes.scale.y = (t % 4.2) > 4.06 ? 0.12 : 1;
+      pupils.forEach((p, i) => { p.position.x = (i ? 0.2 : -0.2) + Math.sin(t * 0.8) * 0.035; });
+      mouth.scale.set(1, 1, 1);
+
+      if (act === 'ko') {
+        const p = Math.min(1, k / 0.9), e = 1 - Math.pow(1 - p, 3);
+        root.rotation.y = ch.facing;
+        root.rotation.z = (k < 0.15 ? Math.sin(k * 60) * 0.12 : 0) - e * 1.35;
+        root.position.x = -0.85 * e;
+        body.position.y = 0; body.scale.set(1, 1, 1);
+        eyes.scale.y = 0.12;
+      } else if (act === 'wobble' && k < 1.1) {
+        root.rotation.z = Math.sin(k * 14) * 0.28 * (1 - k / 1.1);
+      } else if (act === 'laugh' && k < 2.2) {
+        body.position.y += Math.abs(Math.sin(k * 12)) * 0.16 * (1 - k / 2.2);
+        root.rotation.z = Math.sin(k * 12) * 0.08;
+        mouth.scale.set(1.1, 1.5, 1);
+      } else if (act === 'attack' && k < 0.32) {
+        const p = Math.sin((k / 0.32) * Math.PI);
+        root.rotation.z = Math.sign(-ch.facing || 1) * 0.28 * p;
+        body.scale.set(1 + p * 0.08, 1 - p * 0.06, 1 + p * 0.08);
+      }
+    }, name => skin.color.set(name === 'ko' ? '#6B7280' : v.color));
+  }
+
+  const stages = new Set();
+  class Stage {
+    constructor(canvas, { y, h, fov = 28 }) {
+      this.canvas = canvas; this.ctx = canvas.getContext('2d');
+      this.scene = new THREE.Scene();
+      this.scene.add(new THREE.HemisphereLight(0xFFFFFF, 0x50505F, 0.85));
+      const sun = new THREE.DirectionalLight(0xFFFFFF, 0.85); sun.position.set(2.5, 4, 6); this.scene.add(sun);
+      this.cam = new THREE.PerspectiveCamera(fov, 1, 0.1, 60);
+      const dist = (h / 2) / Math.tan((fov * Math.PI) / 360);
+      this.cam.position.set(0, y + 0.15, dist); this.cam.lookAt(0, y, 0);
+      this.cache = new Map(); this.char = null; this.dirty = true;
+      stages.add(this);
+    }
+    show(key, build) {
+      if (!this.cache.has(key)) this.cache.set(key, build());
+      const ch = this.cache.get(key);
+      if (this.char !== ch) { if (this.char) this.scene.remove(this.char.root); this.scene.add(ch.root); this.char = ch; }
+      this.dirty = true;
+      return ch;
+    }
+    frame(t) {
+      const c = this.canvas;
+      if (!this.char || !c.isConnected || c.offsetParent === null) return;
+      const r = c.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > innerHeight || !c.offsetWidth) return;
+      const dpr = Math.min(devicePixelRatio || 1, 2);
+      const w = Math.round(c.offsetWidth * dpr), h = Math.round(c.offsetHeight * dpr);
+      if (c.width !== w || c.height !== h) { c.width = w; c.height = h; this.dirty = true; }
+      const still = reduced();
+      if (still && !this.dirty) return;
+      this.dirty = false;
+      this.char.update(still ? 0 : t);
+      if (w > glW || h > glH) { glW = Math.max(w, glW); glH = Math.max(h, glH); gl.setSize(glW, glH, false); }
+      this.cam.aspect = w / h; this.cam.updateProjectionMatrix();
+      gl.setViewport(0, 0, w, h); gl.setScissor(0, 0, w, h); gl.clear();
+      gl.render(this.scene, this.cam);
+      this.ctx.clearRect(0, 0, w, h);
+      this.ctx.drawImage(gl.domElement, 0, glH - h, w, h, 0, 0, w, h);
+    }
+  }
+  const loop = now => { requestAnimationFrame(loop); const t = now / 1000; stages.forEach(s => s.frame(t)); };
+  requestAnimationFrame(loop);
+
+  return { Stage, hero: buildHero, villain: buildVillain };
+})();
+
+function stage3d(cls, view, label) {
+  const c = document.createElement('canvas');
+  c.className = cls;
+  if (label) c.setAttribute('role', 'img');
+  return { canvas: c, stage: new T3.Stage(c, view) };
+}
+const SK3 = T3 && stage3d('skill-fig', HERO_VIEW);
+const VC3 = T3 && stage3d('v3d', VILLAIN_VIEW, true);
+const FH3 = T3 && stage3d('fig3d', HERO_VIEW);
+const FV3 = T3 && stage3d('fig3d', { y: 0.95, h: 2.7 });
+
 const $ = id => document.getElementById(id);
 let S = null;
 let best = null;
@@ -550,6 +962,11 @@ function showSkill(h, anchor, sheet) {
     el.innerHTML = skillHTML(h);
     el.dataset.hero = h.id;
     el.style.setProperty('--hc', h.color);
+    if (SK3) {
+      el.classList.add('has-3d');
+      el.querySelector('.skill-head').appendChild(SK3.canvas);
+      SK3.stage.show(h.id, () => T3.hero(h));
+    }
   }
   el.classList.toggle('sheet', sheet);
   el.setAttribute('role', sheet ? 'dialog' : 'tooltip');
@@ -622,7 +1039,14 @@ function renderVillain() {
   $('vCount').textContent = `Villain ${S.round + 1} of 10`;
   const art = $('vArt');
   art.className = 'villain-art';
-  art.innerHTML = villainSVG(v, v.name);
+  if (VC3) {
+    art.textContent = '';
+    VC3.canvas.setAttribute('aria-label', v.name);
+    art.appendChild(VC3.canvas);
+    VC3.stage.show(v.name, () => T3.villain(v)).play('idle');
+  } else {
+    art.innerHTML = villainSVG(v, v.name);
+  }
   art.style.setProperty('--v-a', tint(v.color, 0.72));
   art.style.setProperty('--v-b', tint(v.color, 0.88));
   $('vName').textContent = v.name;
@@ -670,8 +1094,19 @@ function fxWord(text, x, y, big, color) {
 function fight(v, h, r) {
   if (reduced()) return Promise.resolve();
   const arena = $('arena'), panel = $('arenaPanel'), fh = $('fHero'), fv = $('fVillain');
-  fh.textContent = ''; fh.appendChild(heroImg(h));
-  fv.innerHTML = villainSVG(v, v.name);
+  // 3D fighters turn to face each other; the DOM wrappers below still do the lunges and knock-outs.
+  let f3 = null;
+  if (FH3 && FV3) {
+    fh.textContent = ''; fh.appendChild(FH3.canvas);
+    fv.textContent = ''; fv.appendChild(FV3.canvas);
+    f3 = { h: FH3.stage.show(h.id, () => T3.hero(h)), v: FV3.stage.show(v.name, () => T3.villain(v)) };
+    f3.h.facing = 0.85; f3.v.facing = -0.85;
+    f3.h.sway = f3.v.sway = 0.2;
+    f3.h.play('idle'); f3.v.play('idle');
+  } else {
+    fh.textContent = ''; fh.appendChild(heroImg(h));
+    fv.innerHTML = villainSVG(v, v.name);
+  }
   $('fx').textContent = '';
   panel.style.setProperty('--v-a', tint(v.color, 0.72));
   panel.style.setProperty('--v-b', tint(v.color, 0.88));
@@ -712,6 +1147,7 @@ function fight(v, h, r) {
 
       for (let i = 0; i < 3; i++) {
         if (done) return;
+        f3?.h.play('punch'); f3?.v.play('attack');
         await Promise.all([go(fh, [X(0), X(d, -6, 8)], 130, 'ease-in'), go(fv, [X(0), X(-d, -6, -8)], 130, 'ease-in')]);
         if (done) return;
         burst(fxWord(any(HITS), 42 + Math.random() * 16, 30 + Math.random() * 40, false, any(HIT_COLORS)), 8);
@@ -722,29 +1158,37 @@ function fight(v, h, r) {
 
       const finish = () => { const w = fxWord(r.bang, 50, 30, true, FINISH_COLORS[r.kind]); if (r.kind === 'good') burst(w, 16); };
       if (r.kind === 'good') {
+        f3?.h.play('punch');
         await go(fh, [X(0), X(d * 1.2, -10, 10)], 140, 'ease-in');
         finish();
+        f3?.v.play('ko'); f3?.h.play('victory');
         await Promise.all([
           go(fv, [X(0), X(d * 4, -d * 3, 540, 0.4, 0)], 520, 'cubic-bezier(.3, .6, .4, 1)'),
           go(fh, [X(d * 1.2, -10, 10), X(d * 0.4, -30), X(d * 0.4, 0)], 420)
         ]);
       } else if (r.kind === 'okay') {
+        f3?.h.play('punch');
         await go(fh, [X(0), X(d * 1.1, -6, 8)], 140, 'ease-in');
         finish();
+        f3?.v.play('wobble');
         await Promise.all([
           go(fv, [X(0), X(d * 0.9, 0, 14), X(d * 0.6, 0, 6)], 450, 'ease-out'),
           go(fh, [X(d * 1.1, -6, 8), X(0)], 300)
         ]);
       } else if (r.kind === 'miss') {
+        f3?.h.play('punch');
         await Promise.all([
           go(fh, [X(0), X(d * 1.6, 0, 12)], 260, 'ease-in'),
           go(fv, [X(0), X(0, -d * 1.2, -10), X(0)], 420, 'ease-in-out')
         ]);
         finish();
+        f3?.h.play('dizzy'); f3?.v.play('laugh');
         await go(fh, [X(d * 1.6, 0, 12), X(d * 1.3, 6, 24), X(0)], 400);
       } else {
+        f3?.v.play('attack');
         await go(fv, [X(0), X(-d * 1.2, -10, -10)], 140, 'ease-in');
         finish();
+        f3?.h.play('dizzy'); f3?.v.play('laugh');
         await Promise.all([
           go(fh, [X(0), X(-d * 4, -d * 3, -540, 0.4, 0)], 520, 'cubic-bezier(.3, .6, .4, 1)'),
           go(fv, [X(-d * 1.2), X(-d * 0.4, -20), X(-d * 0.4, 0), X(-d * 0.4, -14), X(-d * 0.4, 0)], 520)
@@ -792,6 +1236,7 @@ function showResult(v, heroId, r) {
   const art = $('vArt');
   art.querySelector('.stamp')?.remove();
   art.className = 'villain-art r-' + r.kind;
+  if (VC3) VC3.stage.char?.play({ good: 'ko', okay: 'wobble', miss: 'laugh', bad: 'laugh' }[r.kind]);
   const st = document.createElement('span'); st.className = 'stamp ' + r.kind; st.textContent = STAMP[r.kind]; art.appendChild(st);
   const vd = $('verdict'); vd.className = 'verdict rise ' + r.kind; vd.textContent = r.label;
   $('resText').textContent = r.text;

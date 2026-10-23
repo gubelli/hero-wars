@@ -4,7 +4,7 @@ A small browser game starring the team's superheroes. In **Weakness Wars**, ever
 
 ## Play
 
-Open `index.html` in a browser. No build step, no dependencies (fonts load from Google Fonts; without a connection the page falls back to system fonts).
+Open `index.html` in a browser. No build step. Fonts load from Google Fonts, and the 3D heroes and villains use [Three.js](https://threejs.org/) from jsDelivr; without a connection or WebGL, the page falls back to system fonts and flat drawings.
 
 To host it, enable GitHub Pages for this repo (Settings → Pages → deploy from the `main` branch, root folder).
 
@@ -41,7 +41,7 @@ The full hero cards are in [`cards/`](cards/); the small portraits used in the g
 
 ## Changing the game
 
-All game data lives in the `VILLAINS` and `HEROES` arrays near the top of the script in `index.html`. Each villain has:
+All game data lives in the `VILLAINS`, `HEROES` and `LOOK` (3D colours, hair and prop per hero) objects near the top of the script in `index.html`. Each villain has:
 
 - `nem` — the hero whose weakness it is (−25)
 - `best` — the perfect hero and the story line shown on a win (+100)
