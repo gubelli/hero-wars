@@ -80,6 +80,50 @@ main .inner { padding-block: 24px 40px; }
 .hero .nm { font-weight: 800; font-size: 14px; line-height: 1.2; min-width: 0; }
 .hero .wins { margin-left: auto; font-family: var(--display); font-size: 18px; color: var(--hc); letter-spacing: 0.04em; }
 
+.hint { margin: 10px 0 0; color: var(--muted); font-size: 13px; }
+
+/* Skill card: follows the hovered/focused hero on desktop; becomes a bottom sheet with a "Send in" button after a tap on touch screens. */
+.skill { position: fixed; z-index: 40; width: min(330px, calc(100vw - 32px)); border: 3px solid var(--ink); border-radius: 16px; background: var(--paper); box-shadow: 6px 6px 0 var(--ink); overflow: hidden; pointer-events: none; }
+.skill.show { animation: skillIn .22s cubic-bezier(.2, 1.4, .4, 1); }
+.skill-head { position: relative; padding: 10px 44px 8px 14px; background: var(--hc); color: #FFFFFF; }
+.skill-head b { display: block; font-family: var(--display); font-weight: 400; font-size: 26px; line-height: 1; letter-spacing: 0.03em; }
+.skill-head span { display: block; margin-top: 3px; font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; opacity: .88; }
+.skill-body { display: grid; gap: 10px; padding: 10px 14px 14px; }
+.skill-lbl { font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--hc); }
+.skill-body p { margin: 0; font-size: 13px; line-height: 1.4; }
+.stats { display: grid; gap: 5px; }
+.statrow { display: grid; grid-template-columns: minmax(0, 1fr) 84px 30px; gap: 8px; align-items: center; font-size: 12px; line-height: 1.2; }
+.bar { height: 10px; border: 2px solid var(--ink); border-radius: 6px; background: var(--paper-2); overflow: hidden; }
+.bar i { display: block; width: var(--w); height: 100%; background: var(--hc); transform-origin: left; }
+.skill.show .bar i { animation: fill .5s ease-out .08s backwards; }
+.statrow b { font-family: var(--display); font-weight: 400; font-size: 18px; line-height: 1; text-align: right; font-variant-numeric: tabular-nums; }
+.skill-foot { display: flex; gap: 8px; align-items: stretch; }
+.quote { flex: 1; display: flex; align-items: center; border: 2px solid var(--ink); border-radius: 10px; padding: 4px 8px; background: #FFFFFF; font-family: var(--display); font-size: 16px; line-height: 1.1; letter-spacing: 0.03em; }
+.weak { flex: 0 0 42%; border: 2px dashed var(--ink); border-radius: 10px; padding: 4px 8px; font-size: 12px; line-height: 1.25; }
+.weak span { display: block; font-size: 9px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.skill .sheet-only { display: none; }
+.skill.sheet { left: 16px; right: 16px; top: auto; bottom: max(16px, env(safe-area-inset-bottom, 0px)); width: auto; max-width: 440px; margin-inline: auto; pointer-events: auto; }
+.skill.sheet .sheet-only { display: flex; }
+.skill-actions { gap: 14px; align-items: center; }
+.skill-actions .btn { font-size: 22px; padding: 8px 18px; }
+.keep { border: 0; padding: 6px 2px; background: none; color: var(--muted); font: inherit; font-weight: 600; font-size: 14px; text-decoration: underline; cursor: pointer; }
+.close { position: absolute; top: 8px; right: 8px; width: 30px; height: 30px; align-items: center; justify-content: center; border: 2px solid #FFFFFF; border-radius: 50%; background: none; color: #FFFFFF; font-size: 18px; line-height: 1; cursor: pointer; }
+.skill-back { position: fixed; inset: 0; z-index: 39; background: rgba(22, 22, 29, .45); }
+
+/* Fight scene: a comic panel over the page that plays out each pick before the result. */
+.arena { position: fixed; inset: 0; z-index: 45; display: grid; place-items: center; padding: 16px; background: rgba(22, 22, 29, .6); cursor: pointer; }
+.arena-panel { position: relative; isolation: isolate; width: min(640px, 100%); aspect-ratio: 16 / 9; display: flex; align-items: center; justify-content: space-between; padding: 0 8%; border: 5px solid var(--ink); border-radius: 20px; overflow: hidden; background: var(--v-b, #F2EAFB); box-shadow: 8px 8px 0 var(--ink); }
+.arena-panel::before { content: ""; position: absolute; inset: -60%; z-index: -1; background: repeating-conic-gradient(from 0deg at 50% 50%, var(--v-a, #E4D7F7) 0deg 9deg, var(--v-b, #F2EAFB) 9deg 18deg); animation: rays 20s linear infinite; }
+@media (max-width: 560px) { .arena-panel { aspect-ratio: 4 / 3; } }
+.fighter { position: relative; z-index: 1; }
+.fighter img { display: block; width: clamp(84px, 24vw, 150px); aspect-ratio: 1; border: 5px solid var(--hc); border-radius: 50%; object-fit: cover; background: #FFFFFF; box-shadow: 4px 4px 0 var(--ink); }
+.fighter svg { display: block; width: clamp(96px, 27vw, 170px); height: auto; }
+.fx { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+.fxword { position: absolute; isolation: isolate; padding: .5em .9em; font-family: var(--display); font-size: clamp(26px, 6vw, 42px); line-height: 1; letter-spacing: 0.04em; white-space: nowrap; color: var(--ink); }
+.fxword::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--burst, var(--pop)); clip-path: polygon(50% 0, 60% 22%, 84% 8%, 76% 34%, 100% 40%, 80% 56%, 94% 82%, 66% 74%, 58% 100%, 46% 78%, 22% 96%, 24% 70%, 0 66%, 18% 50%, 4% 22%, 30% 26%); }
+.fxword.big { font-size: clamp(40px, 10vw, 70px); }
+.arena-skip { position: absolute; left: 0; right: 0; bottom: max(16px, env(safe-area-inset-bottom, 0px)); margin: 0; text-align: center; color: #E8E1D2; font-size: 13px; }
+
 .result { border: 4px solid var(--ink); border-radius: 18px; background: #FFFFFF; padding: 18px; display: grid; gap: 14px; box-shadow: 6px 6px 0 var(--ink); }
 .bang { --burst: var(--pop); position: relative; isolation: isolate; justify-self: start; font-family: var(--display); font-size: 54px; line-height: 1; letter-spacing: 0.04em; padding: 30px 56px; color: var(--ink); }
 .bang::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--burst); clip-path: polygon(50% 0, 60% 22%, 84% 8%, 76% 34%, 100% 40%, 80% 56%, 94% 82%, 66% 74%, 58% 100%, 46% 78%, 22% 96%, 24% 70%, 0 66%, 18% 50%, 4% 22%, 30% 26%); }
@@ -145,6 +189,8 @@ main .inner { padding-block: 24px 40px; }
 @keyframes pipPop { 35% { transform: scaleY(2.4); } }
 @keyframes bump { 40% { transform: scale(1.1); border-color: var(--pop); } }
 @keyframes floatUp { from { transform: translateY(10px) scale(.6); opacity: 0; } 20% { transform: translateY(0) scale(1.1); opacity: 1; } to { transform: translateY(-36px); opacity: 0; } }
+@keyframes skillIn { from { transform: translateY(6px) scale(.94); opacity: 0; } }
+@keyframes fill { from { transform: scaleX(0); } }
 @keyframes rankIn { from { transform: scale(2.4) rotate(-8deg); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 
@@ -198,6 +244,7 @@ tr:last-child td { border-bottom: 0; }
         <div id="pickPanel">
           <div class="panel-head"><h3>Who do you send in?</h3><p>Perfect +100 · Solid +50 · Own weakness −25</p></div>
           <div class="roster" id="roster"></div>
+          <p class="hint">Hover over a hero to check their skills – on a touch screen, tap first.</p>
         </div>
         <div class="result" id="result" hidden>
           <div class="bang pop-in" id="bang">POW!</div>
@@ -209,6 +256,17 @@ tr:last-child td { border-bottom: 0; }
         </div>
       </div>
     </section>
+
+    <div class="arena" id="arena" aria-hidden="true" hidden>
+      <div class="arena-panel" id="arenaPanel">
+        <div class="fighter" id="fHero"></div>
+        <div class="fighter" id="fVillain"></div>
+        <div class="fx" id="fx"></div>
+      </div>
+      <p class="arena-skip">Tap or press any key to skip</p>
+    </div>
+    <div class="skill-back" id="skillBack" hidden></div>
+    <div class="skill" id="skill" role="tooltip" hidden></div>
 
     <section class="end" id="end" hidden>
       <div class="end-hero">
@@ -234,17 +292,48 @@ tr:last-child td { border-bottom: 0; }
 <script>
 const AV = {"research": "assets/avatars/research.jpg", "handoff": "assets/avatars/handoff.jpg", "sekretariat": "assets/avatars/sekretariat.jpg", "devops": "assets/avatars/devops.jpg", "powerbi": "assets/avatars/powerbi.jpg", "mesi": "assets/avatars/mesi.jpg", "taxi": "assets/avatars/taxi.jpg", "coordinator": "assets/avatars/coordinator.jpg", "sfchat": "assets/avatars/sfchat.jpg", "gleit": "assets/avatars/gleit.jpg"};
 
+// Role, superpower, stats, quote and weakness are taken from the hero cards in cards/.
 const HEROES = [
-  { id: 'research', name: 'Mr. Research', color: '#1D63C4' },
-  { id: 'handoff', name: 'Mr. Handoff Plugin', color: '#C2410C' },
-  { id: 'sekretariat', name: 'Mr. Sekretariat', color: '#7C3AED' },
-  { id: 'devops', name: 'Mr. DevOps', color: '#047857' },
-  { id: 'powerbi', name: 'Mr. Power BI', color: '#B45309' },
-  { id: 'mesi', name: 'Mr. MESI', color: '#0E7490' },
-  { id: 'taxi', name: 'Mr. Flughafentaxi', color: '#A16207' },
-  { id: 'coordinator', name: 'Mrs. Coordinator', color: '#BE185D' },
-  { id: 'sfchat', name: 'Mr. Salesforcechat', color: '#4D7C0F' },
-  { id: 'gleit', name: 'Mr. Gleitschirm', color: '#0369A1' }
+  { id: 'research', name: 'Mr. Research', color: '#1D63C4', role: 'Keeper of the research data',
+    power: 'Finds the one dataset nobody else could locate – and knows exactly where every number came from.',
+    stats: [['Data digging', 98], ['Source accuracy', 95], ['Patience with messy CSVs', 72]],
+    quote: 'Show me the source!', weak: 'Unlabelled columns' },
+  { id: 'handoff', name: 'Mr. Handoff Plugin', color: '#C2410C', role: 'The bridge between apps',
+    power: 'Passes data from one app to the next in a flash – no copy-paste, no lost fields, no excuses.',
+    stats: [['Handoff speed', 97], ['API diplomacy', 90], ['Copy-paste tolerance', 4]],
+    quote: 'Consider it handed off!', weak: 'Breaking API changes' },
+  { id: 'sekretariat', name: 'Mr. Sekretariat', color: '#7C3AED', role: 'Master of all processes',
+    power: 'Turns any chaos into a clean process with clear steps, an owner and a sign-off – before lunch.',
+    stats: [['Process mastery', 99], ['Multitasking', 94], ['Love of “quick favours”', 35]],
+    quote: 'There’s a process for that!', weak: '“Can you just quickly…”' },
+  { id: 'devops', name: 'Mr. DevOps', color: '#047857', role: 'Leader of the DevOps Guild',
+    power: 'Rallies every team behind one pipeline – and ships to production on a Friday without breaking a sweat.',
+    stats: [['Pipeline power', 99], ['Guild leadership', 96], ['Manual deploys allowed', 0]],
+    quote: 'You build it, you run it!', weak: 'Flaky tests' },
+  { id: 'powerbi', name: 'Mr. Power BI', color: '#B45309', role: 'Dashboard wizard',
+    power: 'Turns any spreadsheet into a dashboard before you finish asking – slicers, drill-downs and all.',
+    stats: [['DAX sorcery', 98], ['Dashboards per week', '∞'], ['Trust in pie charts', 12]],
+    quote: 'Let me build a report for that!', weak: 'Data refresh failed' },
+  { id: 'mesi', name: 'Mr. MESI', color: '#0E7490', role: 'Guardian of the single instance',
+    power: 'Fights off every Multi Entity Single Instance question – many entities, one platform, zero mix-ups.',
+    stats: [['Entity separation', 99], ['Questions deflected', 96], ['Patience for “which entity?”', 58]],
+    quote: 'One instance. Every entity!', weak: 'Hard-coded entity IDs' },
+  { id: 'taxi', name: 'Mr. Flughafentaxi', color: '#A16207', role: 'The family airport shuttle',
+    power: 'Gets the whole family to the airport on time – at 4 a.m., with every suitcase, and not one missed flight.',
+    stats: [['Early-morning pickups', 98], ['Luggage Tetris', 95], ['Free evenings left', 8]],
+    quote: 'Everybody buckle up!', weak: 'Last-minute flight changes' },
+  { id: 'coordinator', name: 'Mrs. Coordinator', color: '#BE185D', role: 'Commander of tickets, releases & Pikett',
+    power: 'Keeps every Avaloq ticket on track, lands every release on schedule and has the Pikett plan ready before anyone asks.',
+    stats: [['Ticket triage', 97], ['Release timing', 95], ['Love of Pikett swaps', 20]],
+    quote: 'Who’s on Pikett? Already sorted!', weak: 'Tickets with no description' },
+  { id: 'sfchat', name: 'Mr. Salesforcechat', color: '#4D7C0F', role: 'The one-man integration team',
+    power: 'Gets the Salesforce chat live anyway – building, configuring and testing it himself while his tickets wait for a reply.',
+    stats: [['Do-it-yourself power', 99], ['Workarounds found', 96], ['Help from Salesforce team', 5]],
+    quote: 'Fine – I’ll do it myself!', weak: 'Tickets stuck in “Waiting”' },
+  { id: 'gleit', name: 'Mr. Gleitschirm', color: '#0369A1', role: 'Our high-flying apprentice',
+    power: 'Wants to know how everything works and soaks up every topic – then takes off from a mountain on the weekend.',
+    stats: [['Curiosity', 100], ['Learning speed', 94], ['Fear of heights', 0]],
+    quote: 'Wait – how does that work?', weak: 'Rainy weekends with no thermals' }
 ];
 const H = Object.fromEntries(HEROES.map(h => [h.id, h]));
 
@@ -387,6 +476,64 @@ function heroImg(h, cls) {
   return img;
 }
 
+let lastPtr = '';
+let skillOpener = null;
+
+function skillHTML(h) {
+  const rows = h.stats.map(([label, val]) =>
+    `<div class="statrow"><span>${label}</span><span class="bar"><i style="--w: ${val === '∞' ? 100 : val}%"></i></span><b>${val}</b></div>`).join('');
+  return `<div class="skill-head"><b>${h.name}</b><span>${h.role}</span>
+      <button class="close sheet-only" type="button" aria-label="Close">✕</button></div>
+    <div class="skill-body">
+      <div><div class="skill-lbl">Superpower</div><p>${h.power}</p></div>
+      <div class="stats">${rows}</div>
+      <div class="skill-foot"><div class="quote">“${h.quote}”</div><div class="weak"><span>Weakness</span>${h.weak}</div></div>
+      <div class="skill-actions sheet-only"><button class="btn send" type="button">Send in!</button><button class="keep" type="button">Keep looking</button></div>
+    </div>`;
+}
+
+// Hover mode: sit above the hero tile (below it if there's no room), clamped to the viewport.
+function placeSkill(el, anchor) {
+  const r = anchor.getBoundingClientRect();
+  const w = el.offsetWidth, ht = el.offsetHeight;
+  let top = r.top - ht - 10;
+  if (top < 8) top = r.bottom + 10;
+  top = Math.max(8, Math.min(top, innerHeight - ht - 8));
+  const left = Math.max(8, Math.min(r.left + r.width / 2 - w / 2, innerWidth - w - 8));
+  el.style.left = left + 'px'; el.style.top = top + 'px';
+}
+
+function showSkill(h, anchor, sheet) {
+  const el = $('skill');
+  if (el.dataset.hero !== h.id) {
+    el.innerHTML = skillHTML(h);
+    el.dataset.hero = h.id;
+    el.style.setProperty('--hc', h.color);
+  }
+  el.classList.toggle('sheet', sheet);
+  el.setAttribute('role', sheet ? 'dialog' : 'tooltip');
+  $('skillBack').hidden = !sheet;
+  el.hidden = false;
+  if (sheet) {
+    el.style.left = el.style.top = '';
+    skillOpener = anchor;
+    el.querySelector('.send').focus({ preventScroll: true });
+  } else {
+    placeSkill(el, anchor);
+  }
+  play(el, 'show');
+}
+
+function hideSkill() {
+  const el = $('skill');
+  if (el.hidden) return;
+  const wasSheet = el.classList.contains('sheet');
+  el.hidden = true; el.classList.remove('sheet');
+  $('skillBack').hidden = true;
+  if (wasSheet && skillOpener && S.phase === 'pick') skillOpener.focus({ preventScroll: true });
+  skillOpener = null;
+}
+
 function buildRoster() {
   const r = $('roster'); r.textContent = '';
   HEROES.forEach((h, i) => {
@@ -396,7 +543,17 @@ function buildRoster() {
     b.appendChild(heroImg(h));
     const n = document.createElement('span'); n.className = 'nm'; n.textContent = h.name; b.appendChild(n);
     const w = document.createElement('span'); w.className = 'wins'; w.id = 'wins-' + h.id; b.appendChild(w);
-    b.addEventListener('click', () => pick(h.id));
+    // Mouse: hover shows the skills, click picks. Touch: the first tap opens the skills with a "Send in" button.
+    b.addEventListener('pointerdown', e => { lastPtr = e.pointerType; });
+    b.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') showSkill(h, b, false); });
+    b.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') hideSkill(); });
+    b.addEventListener('focus', () => { if (b.matches(':focus-visible')) showSkill(h, b, false); });
+    b.addEventListener('blur', () => { if (!$('skill').classList.contains('sheet')) hideSkill(); });
+    b.addEventListener('click', () => {
+      const touch = lastPtr === 'touch' || lastPtr === 'pen';
+      lastPtr = '';
+      if (touch) showSkill(h, b, true); else pick(h.id);
+    });
     r.appendChild(b);
   });
 }
@@ -445,18 +602,137 @@ function judge(v, heroId) {
   return { kind: 'miss', pts: 0, bang: 'WHIFF!', label: 'Not quite · +0', text: `${H[heroId].name} gives it everything, but ${v.name} slips away.` };
 }
 
+const HITS = ['BIFF!', 'ZAP!', 'WHAM!', 'KRAK!', 'BONK!', 'THWACK!'];
+const HIT_COLORS = ['#F4C430', '#FFFFFF', '#FCA5A5', '#A7F3D0', '#BFDBFE'];
+const FINISH_COLORS = { good: '#F4C430', okay: '#FDE68A', miss: '#F2E9D6', bad: '#FCA5A5' };
+const sleep = ms => new Promise(res => setTimeout(res, ms));
+const any = a => a[Math.floor(Math.random() * a.length)];
+
+function fxWord(text, x, y, big, color) {
+  const w = document.createElement('span');
+  w.className = 'fxword' + (big ? ' big' : '');
+  w.textContent = text;
+  w.style.left = x + '%'; w.style.top = y + '%';
+  w.style.setProperty('--burst', color);
+  $('fx').appendChild(w);
+  const rot = (Math.random() - 0.5) * 24;
+  const t = s => `translate(-50%, -50%) rotate(${rot}deg) scale(${s})`;
+  const frames = big
+    ? [{ transform: t(0) }, { transform: t(1.25), offset: 0.6 }, { transform: t(1) }]
+    : [{ transform: t(0), opacity: 1 }, { transform: t(1.2), offset: 0.3 }, { transform: t(1), opacity: 1, offset: 0.7 }, { transform: t(0.9), opacity: 0 }];
+  const a = w.animate(frames, { duration: big ? 380 : 520, easing: 'ease-out', fill: 'forwards' });
+  if (!big) a.onfinish = () => w.remove();
+  return w;
+}
+
+// Plays the fight for one pick; resolves when it ends or the player skips it (click, tap or any key).
+function fight(v, h, r) {
+  if (reduced()) return Promise.resolve();
+  const arena = $('arena'), panel = $('arenaPanel'), fh = $('fHero'), fv = $('fVillain');
+  fh.textContent = ''; fh.appendChild(heroImg(h));
+  fv.innerHTML = villainSVG(v, v.name);
+  $('fx').textContent = '';
+  panel.style.setProperty('--v-a', tint(v.color, 0.72));
+  panel.style.setProperty('--v-b', tint(v.color, 0.88));
+  arena.hidden = false;
+
+  return new Promise(resolve => {
+    let done = false;
+    const end = () => {
+      if (done) return;
+      done = true;
+      arena.removeEventListener('click', end);
+      document.removeEventListener('keydown', end);
+      arena.getAnimations({ subtree: true }).forEach(a => a.cancel());
+      arena.hidden = true;
+      resolve();
+    };
+    arena.addEventListener('click', end);
+    document.addEventListener('keydown', end);
+
+    const go = (el, frames, ms, easing = 'ease-in-out') => el.animate(frames, { duration: ms, easing, fill: 'forwards' }).finished.catch(() => {});
+    const X = (x, y = 0, rot = 0, s = 1, o = 1) => ({ transform: `translate(${x}px, ${y}px) rotate(${rot}deg) scale(${s})`, opacity: o });
+
+    (async () => {
+      await Promise.all([
+        go(panel, [{ transform: 'scale(.6) rotate(-4deg)', opacity: 0 }, { transform: 'none', opacity: 1 }], 300, 'cubic-bezier(.2, 1.4, .4, 1)'),
+        go(fh, [X(-260), X(0)], 320, 'cubic-bezier(.3, 1.3, .5, 1)'),
+        go(fv, [X(260), X(0)], 320, 'cubic-bezier(.3, 1.3, .5, 1)')
+      ]);
+      if (done) return;
+      // Half the gap between the fighters, plus a little overlap, so each lunge actually connects.
+      const d = (fv.getBoundingClientRect().left - fh.getBoundingClientRect().right) / 2 + 8;
+
+      const title = fxWord('FIGHT!', 50, 50, true, '#F4C430');
+      await sleep(340);
+      if (done) return;
+      await go(title, [{ opacity: 1 }, { opacity: 0 }], 100);
+      title.remove();
+
+      for (let i = 0; i < 3; i++) {
+        if (done) return;
+        await Promise.all([go(fh, [X(0), X(d, -6, 8)], 130, 'ease-in'), go(fv, [X(0), X(-d, -6, -8)], 130, 'ease-in')]);
+        if (done) return;
+        burst(fxWord(any(HITS), 42 + Math.random() * 16, 30 + Math.random() * 40, false, any(HIT_COLORS)), 8);
+        go(panel, [X(0), X(-6, 3), X(5, -3), X(0)], 160);
+        await Promise.all([go(fh, [X(d, -6, 8), X(0)], 150, 'ease-out'), go(fv, [X(-d, -6, -8), X(0)], 150, 'ease-out')]);
+      }
+      if (done) return;
+
+      const finish = () => { const w = fxWord(r.bang, 50, 30, true, FINISH_COLORS[r.kind]); if (r.kind === 'good') burst(w, 16); };
+      if (r.kind === 'good') {
+        await go(fh, [X(0), X(d * 1.2, -10, 10)], 140, 'ease-in');
+        finish();
+        await Promise.all([
+          go(fv, [X(0), X(d * 4, -d * 3, 540, 0.4, 0)], 520, 'cubic-bezier(.3, .6, .4, 1)'),
+          go(fh, [X(d * 1.2, -10, 10), X(d * 0.4, -30), X(d * 0.4, 0)], 420)
+        ]);
+      } else if (r.kind === 'okay') {
+        await go(fh, [X(0), X(d * 1.1, -6, 8)], 140, 'ease-in');
+        finish();
+        await Promise.all([
+          go(fv, [X(0), X(d * 0.9, 0, 14), X(d * 0.6, 0, 6)], 450, 'ease-out'),
+          go(fh, [X(d * 1.1, -6, 8), X(0)], 300)
+        ]);
+      } else if (r.kind === 'miss') {
+        await Promise.all([
+          go(fh, [X(0), X(d * 1.6, 0, 12)], 260, 'ease-in'),
+          go(fv, [X(0), X(0, -d * 1.2, -10), X(0)], 420, 'ease-in-out')
+        ]);
+        finish();
+        await go(fh, [X(d * 1.6, 0, 12), X(d * 1.3, 6, 24), X(0)], 400);
+      } else {
+        await go(fv, [X(0), X(-d * 1.2, -10, -10)], 140, 'ease-in');
+        finish();
+        await Promise.all([
+          go(fh, [X(0), X(-d * 4, -d * 3, -540, 0.4, 0)], 520, 'cubic-bezier(.3, .6, .4, 1)'),
+          go(fv, [X(-d * 1.2), X(-d * 0.4, -20), X(-d * 0.4, 0), X(-d * 0.4, -14), X(-d * 0.4, 0)], 520)
+        ]);
+      }
+      if (done) return;
+      await sleep(350);
+      if (done) return;
+      await go(arena, [{ opacity: 1 }, { opacity: 0 }], 180);
+      end();
+    })();
+  });
+}
+
 function pick(heroId) {
   if (S.phase !== 'pick') return;
+  hideSkill();
   const v = VILLAINS[S.order[S.round]];
   const r = judge(v, heroId);
   S.score += r.pts;
   S.picks.push({ v: S.order[S.round], hero: heroId, kind: r.kind, pts: r.pts });
   S.phase = 'result';
-  showResult(v, heroId, r);
-  renderHeader();
-  floatPts(r.pts);
-  if (r.kind === 'good') setTimeout(() => burst($('bang')), 120);
-  if (r.kind === 'bad') play($('stage'), 'jolt');
+  fight(v, H[heroId], r).then(() => {
+    showResult(v, heroId, r);
+    renderHeader();
+    floatPts(r.pts);
+    if (r.kind === 'good') setTimeout(() => burst($('bang')), 120);
+    if (r.kind === 'bad') play($('stage'), 'jolt');
+  });
 }
 
 function showResult(v, heroId, r) {
@@ -544,6 +820,13 @@ function start(data) {
   S = (data && data.state) ? data.state : newGame();
   buildRoster();
   $('nextBtn').addEventListener('click', next);
+  $('skill').addEventListener('click', e => {
+    if (e.target.closest('.send')) pick($('skill').dataset.hero);
+    else if (e.target.closest('.close, .keep')) hideSkill();
+  });
+  $('skillBack').addEventListener('click', hideSkill);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') hideSkill(); });
+  addEventListener('scroll', () => { if (!$('skill').classList.contains('sheet')) hideSkill(); }, { passive: true });
   $('againBtn').addEventListener('click', () => { S = newGame(); showPick(); });
   if (S.phase === 'end') { finish(); return; }
   showPick();

@@ -11,11 +11,13 @@ To host it, enable GitHub Pages for this repo (Settings → Pages → deploy fro
 ## Rules
 
 - 10 villains appear in random order, one per hero weakness.
+- Hover over a hero (or tap on a touch screen) to see the superpower, stats and weakness from their card before you send them in.
 - Pick one of the 10 heroes for each villain:
   - **Perfect match:** +100
   - **Solid pick:** +50
   - **Any other hero:** 0
   - **The hero whose own weakness it is:** −25
+- Every pick plays out as a short fight before the result – click, tap or press any key to skip it.
 - Every hero is the perfect match for exactly one villain, so the maximum is 1000 points.
 - Your best score is remembered in your browser.
 
