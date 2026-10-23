@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Weakness Wars</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bangers&family=Inter:wght@400;600;800&display=swap">
+<style>
+/* Layout: a comic-book page — ink masthead band, villain panel beside the hero roster, one result panel that swaps in after each pick. Single deliberate look (paper and ink), matching the hero cards. */
+:root {
+  --ink: #16161D;
+  --paper: #FFFBF2;
+  --paper-2: #F2E9D6;
+  --muted: #5C5C66;
+  --pop: #F4C430;
+  --good: #047857;
+  --okay: #9A6A04;
+  --bad: #B91C1C;
+  --villain: #6D28D9;
+  --display: 'Bangers', 'Impact', 'Arial Narrow', sans-serif;
+  --body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { background: var(--paper); color: var(--ink); }
+body { font-family: var(--body); font-size: 15px; line-height: 1.5; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--ink); }
+
+.band { background: var(--ink); color: var(--paper); }
+.inner { max-width: 1040px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.masthead .top { padding-block: 18px 16px; display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: flex-end; justify-content: space-between; }
+.brand h1 { margin: 0; font-family: var(--display); font-weight: 400; font-size: clamp(40px, 7vw, 64px); line-height: 0.95; letter-spacing: 0.02em; color: var(--pop); text-wrap: balance; }
+.brand p { margin: 6px 0 0; max-width: 52ch; color: #E8E1D2; font-size: 14px; }
+.scoreboard { display: flex; gap: 10px; }
+.stat { min-width: 92px; border: 2px solid #3A3A44; border-radius: 10px; padding: 6px 12px; text-align: right; }
+.stat span { display: block; font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #B9B3A6; }
+.stat b { display: block; font-family: var(--display); font-weight: 400; font-size: 30px; line-height: 1.05; letter-spacing: 0.03em; font-variant-numeric: tabular-nums; color: var(--paper); }
+
+.pips { display: flex; gap: 6px; padding-block: 0 14px; }
+.pip { flex: 1; height: 8px; border-radius: 4px; background: #34343E; }
+.pip.good { background: #34D399; } .pip.okay { background: var(--pop); } .pip.miss { background: #8A8A96; } .pip.bad { background: #F87171; } .pip.now { background: var(--paper); }
+
+main .inner { padding-block: 24px 40px; }
+.stage { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 24px; align-items: start; }
+@media (max-width: 760px) { .stage { grid-template-columns: minmax(0, 1fr); } }
+
+.villain { border: 4px solid var(--ink); border-radius: 18px; background: var(--paper); overflow: hidden; box-shadow: 6px 6px 0 var(--ink); }
+.villain-top { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; background: var(--villain); color: #FFFFFF; font-size: 12px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; }
+.villain-art { aspect-ratio: 4 / 3; max-width: 100%; display: grid; place-items: center; border-block: 4px solid var(--ink); background: repeating-conic-gradient(from 0deg at 50% 60%, var(--v-a, #E4D7F7) 0deg 9deg, var(--v-b, #F2EAFB) 9deg 18deg); }
+.villain-art svg { width: 62%; height: auto; }
+.villain-body { padding: 14px 18px 18px; display: grid; gap: 8px; }
+.villain-body h2 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 40px; line-height: 1; letter-spacing: 0.03em; text-wrap: balance; }
+.villain-body .threat { margin: 0; font-size: 16px; font-weight: 600; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; border: 2px solid var(--ink); border-radius: 999px; padding: 2px 10px; font-size: 12px; font-weight: 600; background: var(--paper-2); }
+.chip b { font-weight: 800; }
+
+.panel-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 12px; }
+.panel-head h3 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 32px; letter-spacing: 0.03em; line-height: 1; }
+.panel-head p { margin: 0; color: var(--muted); font-size: 13px; }
+
+.roster { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.hero { display: flex; align-items: center; gap: 10px; min-height: 64px; padding: 8px 12px 8px 8px; border: 3px solid var(--ink); border-radius: 14px; background: var(--paper); color: var(--ink); font: inherit; text-align: left; cursor: pointer; transition: transform .12s ease, box-shadow .12s ease, background .12s ease; }
+.hero:hover { transform: translate(-2px, -2px); box-shadow: 4px 4px 0 var(--ink); background: var(--tint); }
+.hero:focus-visible { outline: 4px solid var(--pop); outline-offset: 2px; }
+.hero img { width: 48px; height: 48px; flex: none; border-radius: 50%; border: 3px solid var(--hc); object-fit: cover; background: var(--tint); }
+.hero .nm { font-weight: 800; font-size: 14px; line-height: 1.2; min-width: 0; }
+.hero .wins { margin-left: auto; font-family: var(--display); font-size: 18px; color: var(--hc); letter-spacing: 0.04em; }
+
+.result { border: 4px solid var(--ink); border-radius: 18px; background: #FFFFFF; padding: 18px; display: grid; gap: 14px; box-shadow: 6px 6px 0 var(--ink); }
+.bang { --burst: var(--pop); position: relative; isolation: isolate; justify-self: start; font-family: var(--display); font-size: 54px; line-height: 1; letter-spacing: 0.04em; padding: 30px 56px; color: var(--ink); }
+.bang::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--burst); clip-path: polygon(50% 0, 60% 22%, 84% 8%, 76% 34%, 100% 40%, 80% 56%, 94% 82%, 66% 74%, 58% 100%, 46% 78%, 22% 96%, 24% 70%, 0 66%, 18% 50%, 4% 22%, 30% 26%); }
+.bang.ouch { --burst: #FCA5A5; }
+.bang.meh { --burst: var(--paper-2); }
+.matchup { display: flex; align-items: center; gap: 14px; }
+.matchup img { width: 84px; height: 84px; border-radius: 50%; border: 4px solid var(--hc, var(--ink)); object-fit: cover; }
+.matchup .vs { font-family: var(--display); font-size: 28px; }
+.matchup .mini { width: 84px; height: 84px; border-radius: 50%; border: 4px solid var(--ink); display: grid; place-items: center; background: var(--paper-2); overflow: hidden; }
+.matchup .mini svg { width: 80%; height: auto; }
+.verdict { display: inline-flex; align-self: start; justify-self: start; gap: 8px; align-items: center; border-radius: 999px; padding: 4px 14px; font-weight: 800; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; color: #FFFFFF; }
+.verdict.good { background: var(--good); } .verdict.okay { background: var(--okay); } .verdict.miss { background: var(--muted); } .verdict.bad { background: var(--bad); }
+.result p { margin: 0; font-size: 16px; }
+.result .best { font-size: 14px; color: var(--muted); }
+.btn { justify-self: start; border: 3px solid var(--ink); border-radius: 12px; padding: 10px 20px; background: var(--ink); color: var(--paper); font-family: var(--display); font-size: 24px; letter-spacing: 0.06em; cursor: pointer; box-shadow: 4px 4px 0 var(--pop); }
+.btn:hover { transform: translate(-1px, -1px); }
+.btn:focus-visible { outline: 4px solid var(--pop); outline-offset: 3px; }
+
+.shake { animation: shake .4s ease 2; }
+.pop-in { animation: popin .35s cubic-bezier(.2, 1.6, .4, 1); }
+@keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-8px) rotate(-3deg); } 75% { transform: translateX(8px) rotate(3deg); } }
+@keyframes popin { from { transform: scale(.4) rotate(-10deg); } to { transform: scale(1) rotate(0); } }
+@media (prefers-reduced-motion: reduce) { .shake, .pop-in { animation: none; } .hero { transition: none; } }
+
+.end { display: grid; gap: 20px; }
+.end-hero { display: flex; flex-wrap: wrap; gap: 16px 32px; align-items: center; border: 4px solid var(--ink); border-radius: 18px; background: #FFFFFF; padding: 20px; box-shadow: 6px 6px 0 var(--ink); }
+.end-hero .total { font-family: var(--display); font-size: 72px; line-height: 1; letter-spacing: 0.03em; font-variant-numeric: tabular-nums; }
+.end-hero .rank { font-family: var(--display); font-size: 34px; letter-spacing: 0.03em; color: var(--villain); line-height: 1.05; }
+.end-hero p { margin: 4px 0 0; color: var(--muted); }
+.table-wrap { overflow-x: auto; border: 3px solid var(--ink); border-radius: 14px; background: #FFFFFF; }
+table { width: 100%; border-collapse: collapse; min-width: 560px; }
+th, td { padding: 10px 14px; text-align: left; border-bottom: 2px solid var(--paper-2); vertical-align: middle; font-size: 14px; }
+th { font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); background: var(--paper); }
+td.pts { text-align: right; font-family: var(--display); font-size: 20px; font-variant-numeric: tabular-nums; }
+tr:last-child td { border-bottom: 0; }
+.foot { margin-top: 28px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<header class="band masthead">
+  <div class="inner top">
+    <div class="brand">
+      <h1>Weakness Wars</h1>
+      <p>Ten villains, each born from one hero's weakness. Send in the hero who can beat it – never the one it was made to defeat.</p>
+    </div>
+    <div class="scoreboard" aria-live="polite">
+      <div class="stat"><span>Villain</span><b id="roundLbl">1/10</b></div>
+      <div class="stat"><span>Score</span><b id="scoreLbl">0</b></div>
+      <div class="stat"><span>Best</span><b id="bestLbl">–</b></div>
+    </div>
+  </div>
+  <div class="inner"><div class="pips" id="pips" aria-hidden="true"></div></div>
+</header>
+
+<main>
+  <div class="inner">
+    <section class="stage" id="stage">
+      <article class="villain" id="villainCard">
+        <div class="villain-top"><span id="vCount">Villain 1 of 10</span><span>Threat level: high</span></div>
+        <div class="villain-art" id="vArt"></div>
+        <div class="villain-body">
+          <h2 id="vName">Villain</h2>
+          <p class="threat" id="vThreat"></p>
+          <div class="chips">
+            <span class="chip">Born from: <b id="vWeak"></b></span>
+            <span class="chip">Nemesis of: <b id="vNem"></b></span>
+          </div>
+        </div>
+      </article>
+
+      <div>
+        <div id="pickPanel">
+          <div class="panel-head"><h3>Who do you send in?</h3><p>Perfect +100 · Solid +50 · Own weakness −25</p></div>
+          <div class="roster" id="roster"></div>
+        </div>
+        <div class="result" id="result" hidden>
+          <div class="bang pop-in" id="bang">POW!</div>
+          <div class="matchup" id="matchup"></div>
+          <span class="verdict" id="verdict"></span>
+          <p id="resText"></p>
+          <p class="best" id="bestText"></p>
+          <button class="btn" id="nextBtn" type="button">Next villain</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="end" id="end" hidden>
+      <div class="end-hero">
+        <div class="total" id="endTotal">0</div>
+        <div>
+          <div class="rank" id="endRank"></div>
+          <p id="endSub"></p>
+        </div>
+        <button class="btn" id="againBtn" type="button">Play again</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Villain</th><th>You sent</th><th>Result</th><th>Perfect match</th><th style="text-align:right">Pts</th></tr></thead>
+          <tbody id="endRows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <p class="foot">Draft · villains appear in a new order every game · every hero is the perfect match for exactly one villain.</p>
+  </div>
+</main>
+
+<script>
+const AV = {"research": "assets/avatars/research.jpg", "handoff": "assets/avatars/handoff.jpg", "sekretariat": "assets/avatars/sekretariat.jpg", "devops": "assets/avatars/devops.jpg", "powerbi": "assets/avatars/powerbi.jpg", "mesi": "assets/avatars/mesi.jpg", "taxi": "assets/avatars/taxi.jpg", "coordinator": "assets/avatars/coordinator.jpg", "sfchat": "assets/avatars/sfchat.jpg", "gleit": "assets/avatars/gleit.jpg"};
+
+const HEROES = [
+  { id: 'research', name: 'Mr. Research', color: '#1D63C4' },
+  { id: 'handoff', name: 'Mr. Handoff Plugin', color: '#C2410C' },
+  { id: 'sekretariat', name: 'Mr. Sekretariat', color: '#7C3AED' },
+  { id: 'devops', name: 'Mr. DevOps', color: '#047857' },
+  { id: 'powerbi', name: 'Mr. Power BI', color: '#B45309' },
+  { id: 'mesi', name: 'Mr. MESI', color: '#0E7490' },
+  { id: 'taxi', name: 'Mr. Flughafentaxi', color: '#A16207' },
+  { id: 'coordinator', name: 'Mrs. Coordinator', color: '#BE185D' },
+  { id: 'sfchat', name: 'Mr. Salesforcechat', color: '#4D7C0F' },
+  { id: 'gleit', name: 'Mr. Gleitschirm', color: '#0369A1' }
+];
+const H = Object.fromEntries(HEROES.map(h => [h.id, h]));
+
+const VILLAINS = [
+  { name: 'Captain Unlabelled', weak: 'Unlabelled columns', nem: 'research', glyph: 'col_?', color: '#7C3AED',
+    threat: 'Turns every dataset into col_1, col_2, col_3 … and nobody knows what they mean.',
+    best: ['powerbi', 'Mr. Power BI builds a clean data model and names every column before lunch.'],
+    ok: ['handoff', 'Mr. Handoff Plugin maps the fields one by one. It works, but it takes all afternoon.'] },
+  { name: 'The API Breaker', weak: 'Breaking API changes', nem: 'handoff', glyph: 'v2→v3', color: '#DC2626',
+    threat: 'Renames a field in production on a Tuesday. No warning, no changelog.',
+    best: ['devops', 'The contract tests in Mr. DevOps’ pipeline catch the change before it ever ships.'],
+    ok: ['sfchat', 'Mr. Salesforcechat hacks together a workaround. Again.'] },
+  { name: 'The Quick-Favour Phantom', weak: '“Can you just quickly…”', nem: 'sekretariat', glyph: '1 min?', color: '#0891B2',
+    threat: 'Appears at your desk with “just one tiny thing” – five times a day.',
+    best: ['mesi', 'Mr. MESI deflects it like every other question. The Phantom bounces right off the shield.'],
+    ok: ['coordinator', 'Mrs. Coordinator asks for a ticket. The Phantom slowly backs away.'] },
+  { name: 'The Flaky Fiend', weak: 'Flaky tests', nem: 'devops', glyph: '✓✗✓', color: '#65A30D',
+    threat: 'Green, red, green, red. Nobody knows why, and everyone just hits “re-run”.',
+    best: ['gleit', 'Mr. Gleitschirm keeps asking “but how does that work?” until the root cause confesses.'],
+    ok: ['research', 'Mr. Research digs through the logs and finds a suspicious shared test database.'] },
+  { name: 'The Refresh Wraith', weak: 'Data refresh failed', nem: 'powerbi', glyph: '06:00', color: '#475569',
+    threat: 'Strikes at six in the morning, right before the management meeting.',
+    best: ['handoff', 'Mr. Handoff Plugin reconnects the data source and passes the data straight through.'],
+    ok: ['devops', 'Mr. DevOps adds monitoring, so the Wraith can never sneak up again.'] },
+  { name: 'The Hard-Code Hydra', weak: 'Hard-coded entity IDs', nem: 'mesi', glyph: 'ID=7', color: '#B45309',
+    threat: 'Cut off one hard-coded ID and two more grow back in the next release.',
+    best: ['sfchat', 'Mr. Salesforcechat rewrites the whole thing himself. He is very used to that.'],
+    ok: ['devops', 'Mr. DevOps adds a lint rule that blocks new heads from growing.'] },
+  { name: 'The Gate-Change Gremlin', weak: 'Last-minute flight changes', nem: 'taxi', glyph: '+3h', color: '#0F766E',
+    threat: 'Moves the family flight three hours earlier – at midnight.',
+    best: ['sekretariat', 'Mr. Sekretariat: “There’s a process for that.” New plan, new pickup, done.'],
+    ok: ['coordinator', 'Mrs. Coordinator reschedules everyone in minutes. Pikett plan included.'] },
+  { name: 'The Blank Ticket', weak: 'Tickets with no description', nem: 'coordinator', glyph: '???', color: '#9333EA',
+    threat: 'Title: “Fix it”. Description: empty. Priority: urgent.',
+    best: ['research', 'Mr. Research digs up exactly what the reporter meant – with sources.'],
+    ok: ['sekretariat', 'Mr. Sekretariat adds a mandatory ticket template. The Blank Ticket fades away.'] },
+  { name: 'The Waiting Warden', weak: 'Tickets stuck in “Waiting”', nem: 'sfchat', glyph: 'zzz', color: '#57534E',
+    threat: 'Guards a queue where tickets go to sleep and never wake up.',
+    best: ['coordinator', 'Mrs. Coordinator raises it in the release meeting. Status: In progress.'],
+    ok: ['taxi', 'Mr. Flughafentaxi drives over and picks up the answer in person.'] },
+  { name: 'The Grey Sky', weak: 'Rainy weekends', nem: 'gleit', glyph: '☂', color: '#64748B',
+    threat: 'Parks a heavy cloud over every launch site, every single weekend.',
+    best: ['taxi', 'Mr. Flughafentaxi drives him to the airport – off to sunny skies!'],
+    ok: ['powerbi', 'Mr. Power BI builds a weather dashboard that spots the next flying day.'] }
+];
+
+function tint(hex, t) {
+  const n = parseInt(hex.slice(1), 16);
+  const m = c => Math.round(c + (255 - c) * t);
+  return `rgb(${m((n >> 16) & 255)}, ${m((n >> 8) & 255)}, ${m(n & 255)})`;
+}
+
+function villainSVG(v, label) {
+  const dark = '#16161D';
+  return `<svg viewBox="0 0 200 200" role="img" aria-label="${label}">
+    <ellipse cx="100" cy="190" rx="62" ry="8" fill="${dark}" opacity="0.18"></ellipse>
+    <path d="M62 54 L50 18 L84 44 Z" fill="${dark}" stroke="${dark}" stroke-width="4" stroke-linejoin="round"></path>
+    <path d="M138 54 L150 18 L116 44 Z" fill="${dark}" stroke="${dark}" stroke-width="4" stroke-linejoin="round"></path>
+    <path d="M40 122 Q36 50 100 44 Q164 50 160 122 Q166 172 140 182 L60 182 Q34 172 40 122 Z" fill="${v.color}" stroke="${dark}" stroke-width="5" stroke-linejoin="round"></path>
+    <path d="M58 70 Q78 58 96 62" fill="none" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" opacity="0.35"></path>
+    <ellipse cx="80" cy="104" rx="12" ry="9" fill="#FFFFFF" stroke="${dark}" stroke-width="3"></ellipse>
+    <ellipse cx="120" cy="104" rx="12" ry="9" fill="#FFFFFF" stroke="${dark}" stroke-width="3"></ellipse>
+    <circle cx="84" cy="106" r="4.5" fill="${dark}"></circle>
+    <circle cx="116" cy="106" r="4.5" fill="${dark}"></circle>
+    <path d="M64 84 L94 96" stroke="${dark}" stroke-width="7" stroke-linecap="round"></path>
+    <path d="M136 84 L106 96" stroke="${dark}" stroke-width="7" stroke-linecap="round"></path>
+    <path d="M70 132 Q100 158 130 132 Z" fill="${dark}"></path>
+    <path d="M78 134 L84 143 L90 137 L96 145 L102 137 L108 145 L114 137 L120 143 L124 134 Z" fill="#FFFFFF"></path>
+    <rect x="62" y="156" width="76" height="20" rx="5" fill="${dark}"></rect>
+    <text x="100" y="171" text-anchor="middle" font-family="Bangers, Impact, sans-serif" font-size="15" letter-spacing="1" fill="#FFFFFF">${v.glyph}</text>
+  </svg>`;
+}
+
+const $ = id => document.getElementById(id);
+let S = null;
+let best = null;
+try { const b = localStorage.getItem('ww-best'); if (b !== null) best = Number(b); } catch (e) {}
+
+function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function newGame() { return { order: shuffle(VILLAINS.map((_, i) => i)), round: 0, score: 0, picks: [], phase: 'pick' }; }
+
+function heroImg(h, cls) {
+  const img = document.createElement('img');
+  img.src = AV[h.id]; img.alt = ''; if (cls) img.className = cls;
+  img.style.setProperty('--hc', h.color); img.style.setProperty('--tint', tint(h.color, 0.85));
+  return img;
+}
+
+function buildRoster() {
+  const r = $('roster'); r.textContent = '';
+  HEROES.forEach(h => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'hero'; b.id = 'hero-' + h.id;
+    b.style.setProperty('--hc', h.color); b.style.setProperty('--tint', tint(h.color, 0.86));
+    b.appendChild(heroImg(h));
+    const n = document.createElement('span'); n.className = 'nm'; n.textContent = h.name; b.appendChild(n);
+    const w = document.createElement('span'); w.className = 'wins'; w.id = 'wins-' + h.id; b.appendChild(w);
+    b.addEventListener('click', () => pick(h.id));
+    r.appendChild(b);
+  });
+}
+
+function renderPips() {
+  const p = $('pips'); p.textContent = '';
+  for (let i = 0; i < 10; i++) {
+    const d = document.createElement('span'); d.className = 'pip';
+    if (S.picks[i]) d.classList.add(S.picks[i].kind);
+    else if (i === S.round && S.phase !== 'end') d.classList.add('now');
+    p.appendChild(d);
+  }
+}
+
+function renderHeader() {
+  $('roundLbl').textContent = `${Math.min(S.round + 1, 10)}/10`;
+  $('scoreLbl').textContent = S.score;
+  $('bestLbl').textContent = best === null ? '–' : best;
+  renderPips();
+}
+
+function renderVillain() {
+  const v = VILLAINS[S.order[S.round]];
+  $('vCount').textContent = `Villain ${S.round + 1} of 10`;
+  const art = $('vArt');
+  art.innerHTML = villainSVG(v, v.name);
+  art.style.setProperty('--v-a', tint(v.color, 0.72));
+  art.style.setProperty('--v-b', tint(v.color, 0.88));
+  $('vName').textContent = v.name;
+  $('vThreat').textContent = v.threat;
+  $('vWeak').textContent = v.weak;
+  $('vNem').textContent = H[v.nem].name;
+  $('villainCard').querySelector('.villain-top').style.background = v.color;
+  HEROES.forEach(h => {
+    const wins = S.picks.filter(p => p.hero === h.id && p.kind === 'good').length;
+    $('wins-' + h.id).textContent = wins ? '★'.repeat(wins) : '';
+  });
+}
+
+function judge(v, heroId) {
+  if (heroId === v.best[0]) return { kind: 'good', pts: 100, bang: 'POW!', label: 'Perfect match · +100', text: v.best[1] };
+  if (heroId === v.ok[0]) return { kind: 'okay', pts: 50, bang: 'BAM!', label: 'Solid pick · +50', text: v.ok[1] };
+  if (heroId === v.nem) return { kind: 'bad', pts: -25, bang: 'OUCH!', label: 'Own weakness · −25', text: `${v.weak} is exactly what ${H[heroId].name} can’t handle. Knocked out in the first panel!` };
+  return { kind: 'miss', pts: 0, bang: 'WHIFF!', label: 'Not quite · +0', text: `${H[heroId].name} gives it everything, but ${v.name} slips away.` };
+}
+
+function pick(heroId) {
+  if (S.phase !== 'pick') return;
+  const v = VILLAINS[S.order[S.round]];
+  const r = judge(v, heroId);
+  S.score += r.pts;
+  S.picks.push({ v: S.order[S.round], hero: heroId, kind: r.kind, pts: r.pts });
+  S.phase = 'result';
+  showResult(v, heroId, r);
+  renderHeader();
+}
+
+function showResult(v, heroId, r) {
+  const h = H[heroId];
+  $('pickPanel').hidden = true;
+  const res = $('result'); res.hidden = false;
+  const bang = $('bang');
+  bang.textContent = r.bang;
+  bang.className = 'bang pop-in' + (r.kind === 'bad' ? ' ouch' : r.kind === 'miss' ? ' meh' : '');
+  void bang.offsetWidth;
+  const m = $('matchup'); m.textContent = '';
+  const hi = heroImg(h); m.appendChild(hi);
+  const vs = document.createElement('span'); vs.className = 'vs'; vs.textContent = 'vs'; m.appendChild(vs);
+  const mini = document.createElement('div'); mini.className = 'mini'; mini.innerHTML = villainSVG(v, v.name); m.appendChild(mini);
+  if (r.kind === 'good' || r.kind === 'okay') mini.classList.add('shake'); else hi.classList.add('shake');
+  const vd = $('verdict'); vd.className = 'verdict ' + r.kind; vd.textContent = r.label;
+  $('resText').textContent = r.text;
+  $('bestText').textContent = r.kind === 'good' ? '' : `Perfect match: ${H[v.best[0]].name}.`;
+  $('bestText').hidden = r.kind === 'good';
+  $('nextBtn').textContent = S.round === 9 ? 'See results' : 'Next villain';
+  $('nextBtn').focus({ preventScroll: true });
+}
+
+function next() {
+  S.round++;
+  if (S.round >= 10) { finish(); return; }
+  S.phase = 'pick';
+  showPick();
+}
+
+function showPick() {
+  $('end').hidden = true; $('stage').hidden = false;
+  $('result').hidden = true; $('pickPanel').hidden = false;
+  renderVillain(); renderHeader();
+}
+
+function rankFor(s) {
+  if (s >= 900) return ['Legendary Team Lead', 'You know this team better than they know themselves.'];
+  if (s >= 650) return ['Guild Captain', 'Most villains never stood a chance.'];
+  if (s >= 350) return ['Trusted Sidekick', 'Good instincts – a few villains got away.'];
+  return ['Hero in Training', 'The villains are celebrating. Try another round!'];
+}
+
+function finish() {
+  S.phase = 'end'; S.round = 10;
+  if (best === null || S.score > best) { best = S.score; try { localStorage.setItem('ww-best', String(best)); } catch (e) {} }
+  $('stage').hidden = true; $('end').hidden = false;
+  const [rank, sub] = rankFor(S.score);
+  $('endTotal').textContent = S.score;
+  $('endRank').textContent = rank;
+  $('endSub').textContent = sub + ' Perfect matches: ' + S.picks.filter(p => p.kind === 'good').length + ' of 10.';
+  const tb = $('endRows'); tb.textContent = '';
+  const labels = { good: 'Perfect', okay: 'Solid', miss: 'Missed', bad: 'Own weakness' };
+  S.picks.forEach(p => {
+    const v = VILLAINS[p.v];
+    const tr = document.createElement('tr');
+    [v.name, H[p.hero].name, labels[p.kind], H[v.best[0]].name].forEach(t => { const td = document.createElement('td'); td.textContent = t; tr.appendChild(td); });
+    const td = document.createElement('td'); td.className = 'pts'; td.textContent = (p.pts > 0 ? '+' : '') + p.pts; tr.appendChild(td);
+    tb.appendChild(tr);
+  });
+  renderHeader();
+  $('roundLbl').textContent = '10/10';
+}
+
+function start(data) {
+  S = (data && data.state) ? data.state : newGame();
+  buildRoster();
+  $('nextBtn').addEventListener('click', next);
+  $('againBtn').addEventListener('click', () => { S = newGame(); showPick(); });
+  if (S.phase === 'end') { finish(); return; }
+  showPick();
+  if (S.phase === 'result') {
+    const last = S.picks[S.picks.length - 1];
+    const v = VILLAINS[last.v];
+    showResult(v, last.hero, judge(v, last.hero));
+  }
+}
+
+window.claude?.hot?.snapshot?.(() => ({ state: S }));
+window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
+</script>
+
+</body>
+</html>
