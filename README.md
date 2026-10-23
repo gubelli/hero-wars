@@ -41,7 +41,7 @@ The full hero cards are in [`cards/`](cards/); the small portraits used in the g
 
 ## Changing the game
 
-All game data lives in the `VILLAINS`, `HEROES` and `LOOK` (3D colours, hair and prop per hero) objects near the top of the script in `index.html`. Each villain has:
+All game data lives in the `VILLAINS`, `HEROES` and `LOOK` (3D colours, eye colour, hair and prop per hero) objects near the top of the script in `index.html`. Each villain has:
 
 - `nem` — the hero whose weakness it is (−25)
 - `best` — the perfect hero and the story line shown on a win (+100)
