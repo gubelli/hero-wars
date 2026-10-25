@@ -345,8 +345,9 @@ tr:last-child td { border-bottom: 0; }
   </div>
 </main>
 
-<script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
-<script>
+<script type="module">
+// Three.js only ships as an ES module; without a connection the import fails and the flat drawings are used.
+const THREE = await import('https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.min.js').catch(() => null);
 const AV ={"research": "assets/avatars/research.jpg", "handoff": "assets/avatars/handoff.jpg", "sekretariat": "assets/avatars/sekretariat.jpg", "devops": "assets/avatars/devops.jpg", "powerbi": "assets/avatars/powerbi.jpg", "mesi": "assets/avatars/mesi.jpg", "taxi": "assets/avatars/taxi.jpg", "coordinator": "assets/avatars/coordinator.jpg", "sfchat": "assets/avatars/sfchat.jpg", "gleit": "assets/avatars/gleit.jpg"};
 
 // Role, superpower, stats, quote and weakness are taken from the hero cards in cards/.
@@ -498,18 +499,16 @@ const HERO_VIEW = { y: 1.6, h: 3.65 };
 const VILLAIN_VIEW = { y: 0.9, h: 2.6 };
 
 const T3 = (() => {
-  if (!window.THREE) return null;
+  if (!THREE) return null;
   let gl;
   try { gl = new THREE.WebGLRenderer({ antialias: true, alpha: true }); } catch (e) { return null; }
   const PI = Math.PI, V2 = THREE.Vector2, V3 = THREE.Vector3;
-  THREE.ColorManagement.legacyMode = false;
   gl.setPixelRatio(1);
   gl.setClearColor(0x000000, 0);
-  gl.outputEncoding = THREE.sRGBEncoding;
   gl.toneMapping = THREE.ACESFilmicToneMapping;
   gl.toneMappingExposure = 1.15;
   gl.shadowMap.enabled = true;
-  gl.shadowMap.type = THREE.PCFSoftShadowMap;
+  gl.shadowMap.type = THREE.PCFShadowMap;
   let glW = 0, glH = 0;
 
   // A soft studio for reflections: grey walls, a warm softbox above, a cool strip light behind.
@@ -590,7 +589,7 @@ const T3 = (() => {
   function canvasTex(w, h, draw) {
     const c = document.createElement('canvas'); c.width = w; c.height = h;
     const t = new THREE.CanvasTexture(c);
-    t.encoding = THREE.sRGBEncoding; t.anisotropy = 4;
+    t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
     const paint = () => { const g = c.getContext('2d'); g.save(); g.clearRect(0, 0, w, h); draw(g, w, h); g.restore(); t.needsUpdate = true; };
     paint();
     document.fonts?.ready.then(paint);
@@ -872,7 +871,7 @@ const T3 = (() => {
     // Blended rather than only alpha-tested, so the canvas keeps a solid alpha under the hair. Seen from
     // either side, a strand keeps the normal pointing away from the head.
     const mat = once('strand' + color, () => Object.assign(new THREE.MeshPhysicalMaterial({ color, map: STRAND, alphaTest: 0.2, transparent: true, side: THREE.DoubleSide, vertexColors: true, roughness: 0.55, specularIntensity: 0.35, envMapIntensity: 0.7, sheen: 0.4, sheenRoughness: 0.4, sheenColor: col(color) }), {
-      onBeforeCompile: sh => { sh.fragmentShader = sh.fragmentShader.replace('#include <normal_fragment_begin>', THREE.ShaderChunk.normal_fragment_begin.replace('normal = normal * faceDirection;', '')); }
+      onBeforeCompile: sh => { sh.fragmentShader = sh.fragmentShader.replace('#include <normal_fragment_begin>', THREE.ShaderChunk.normal_fragment_begin.replace('normal *= faceDirection;', '')); }
     }));
     return add(head, ribbons(list, width), mat);
   }
@@ -1403,13 +1402,14 @@ const T3 = (() => {
       const scene = this.scene = new THREE.Scene();
       scene.environment = ENV;
       scene.add(ground());
-      scene.add(new THREE.HemisphereLight(0xFFF6EC, 0x4A4038, 0.35));
-      const key = new THREE.DirectionalLight(0xFFF1E0, 2.3); key.position.set(2.2, 5, 4.5);
+      // Intensities are in physical units (the earlier, legacy values times PI).
+      scene.add(new THREE.HemisphereLight(0xFFF6EC, 0x4A4038, 0.35 * PI));
+      const key = new THREE.DirectionalLight(0xFFF1E0, 2.3 * PI); key.position.set(2.2, 5, 4.5);
       key.castShadow = true; key.shadow.mapSize.set(1024, 1024); key.shadow.bias = -0.0004; key.shadow.normalBias = 0.02;
       Object.assign(key.shadow.camera, { left: -2.2, right: 2.2, top: 4, bottom: -1.2, near: 1, far: 14 });
       scene.add(key);
-      const rim = new THREE.DirectionalLight(0xCFE0FF, 2.2); rim.position.set(-3.5, 3.5, -4); scene.add(rim);
-      const rim2 = new THREE.DirectionalLight(0xFFE2C8, 1.1); rim2.position.set(4, 2, -3); scene.add(rim2);
+      const rim = new THREE.DirectionalLight(0xCFE0FF, 2.2 * PI); rim.position.set(-3.5, 3.5, -4); scene.add(rim);
+      const rim2 = new THREE.DirectionalLight(0xFFE2C8, 1.1 * PI); rim2.position.set(4, 2, -3); scene.add(rim2);
       this.cam = new THREE.PerspectiveCamera(fov, 1, 0.1, 60);
       const dist = (h / 2) / Math.tan((fov * Math.PI) / 360);
       this.cam.position.set(0, y + 0.15, dist); this.cam.lookAt(0, y, 0);

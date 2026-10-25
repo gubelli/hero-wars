@@ -4,7 +4,7 @@ A small browser game starring the team's superheroes. In **Weakness Wars**, ever
 
 ## Play
 
-Open `index.html` in a browser. No build step. Fonts load from Google Fonts, and the 3D heroes and villains use [Three.js](https://threejs.org/) from jsDelivr; without a connection or WebGL, the page falls back to system fonts and flat drawings.
+Open `index.html` in a browser. No build step. Fonts load from Google Fonts, and the 3D heroes and villains use [Three.js](https://threejs.org/) (r186, as an ES module) from jsDelivr; without a connection or WebGL, the page falls back to system fonts and flat drawings.
 
 To host it, enable GitHub Pages for this repo (Settings → Pages → deploy from the `main` branch, root folder).
 
